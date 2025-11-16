@@ -297,7 +297,7 @@ services:
 server {
     server_name journal.tailnet.local;
     location / {
-        proxy_pass http://journal-web:3000;
+        proxy_pass http://journal-web:3001;
     }
 }
 ```
