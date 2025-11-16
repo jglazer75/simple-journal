@@ -304,7 +304,14 @@ server {
 
 ### 9.4 Database migrations & seeds
 
-Run Prisma commands from the `journal-web` directory so they can pick up the root `.env` file:
+Run Prisma commands from the `journal-web` directory so they can pick up the root `.env` file (which contains Docker hostnames for Postgres/Redis). Prisma itself still expects a local `.env`, so copy the root config after changes:
+
+```bash
+cp .env.example .env   # if needed
+cp .env ../.env
+```
+
+Then from `journal-web/`:
 
 ```bash
 cd journal-web
