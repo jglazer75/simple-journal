@@ -648,12 +648,14 @@ function HistoryPreview({ refreshKey }: HistoryPreviewProps) {
         {entries.map((entry) => {
           const emoji = ENTRY_EMOJI_BY_TYPE[entry.entryType] ?? "📝";
           const trimmed = entry.bodyMarkdown?.trim() ?? "";
-          const snippet =
-            trimmed.length > 0
-              ? trimmed.length > 120
-                ? `${trimmed.slice(0, 120)}…`
-                : trimmed
-              : "—";
+          let snippet: string;
+          if (trimmed.length > 0) {
+            snippet = trimmed.length > 120 ? `${trimmed.slice(0, 120)}…` : trimmed;
+          } else if (entry.entryType === "ANGER" && entry.angerReason) {
+            snippet = entry.angerReason;
+          } else {
+            snippet = "—";
+          }
           return (
             <li
               key={entry.id}
