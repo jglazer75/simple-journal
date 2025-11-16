@@ -302,6 +302,19 @@ server {
 }
 ```
 
+### 9.4 Database migrations & seeds
+
+Run Prisma commands from the `journal-web` directory so they can pick up the root `.env` file:
+
+```bash
+cd journal-web
+npm run prisma:generate
+npm run db:migrate
+npm run db:seed
+```
+
+The `dotenv-cli` helper loads `/home/jglazer/docker/simple-journal/.env` automatically via the `--path ../.env` flag. Update that file before running migrations against another environment.
+
 ---
 
 ## 10. Phased Development Plan
