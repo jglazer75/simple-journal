@@ -1,5 +1,6 @@
 import { SignJWT, jwtVerify } from "jose";
 import { cookies } from "next/headers";
+import type { ReadonlyRequestCookies } from "next/dist/server/web/spec-extension/adapters/request-cookies";
 
 const SESSION_COOKIE = "sj_session";
 const SESSION_MAX_AGE = 60 * 60 * 24 * 180; // 180 days
@@ -14,6 +15,13 @@ function getSecret() {
   return encoder.encode(secret);
 }
 
+function mutableCookies() {
+  return cookies() as unknown as ReadonlyRequestCookies & {
+    set: ReadonlyRequestCookies["set"];
+    delete: ReadonlyRequestCookies["delete"];
+  };
+}
+
 export async function setSessionCookie(userId: string) {
   const token = await new SignJWT({ sub: userId })
     .setProtectedHeader({ alg: "HS256" })
@@ -21,7 +29,7 @@ export async function setSessionCookie(userId: string) {
     .setExpirationTime(`${SESSION_MAX_AGE}s`)
     .sign(getSecret());
 
-  cookies().set({
+  mutableCookies().set({
     name: SESSION_COOKIE,
     value: token,
     httpOnly: true,
@@ -47,5 +55,5 @@ export async function getSessionUserId(): Promise<string | null> {
 }
 
 export function clearSessionCookie() {
-  cookies().delete(SESSION_COOKIE);
+  mutableCookies().delete(SESSION_COOKIE);
 }
