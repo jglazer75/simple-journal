@@ -3,6 +3,10 @@ import { cookies } from "next/headers";
 
 const SESSION_COOKIE = "sj_session";
 const SESSION_MAX_AGE = 60 * 60 * 24 * 180; // 180 days
+const SESSION_COOKIE_SECURE =
+  process.env.SESSION_COOKIE_SECURE === undefined
+    ? process.env.NODE_ENV === "production"
+    : process.env.SESSION_COOKIE_SECURE.toLowerCase() === "true";
 
 const encoder = new TextEncoder();
 
@@ -44,7 +48,7 @@ export async function setSessionCookie(userId: string) {
     name: SESSION_COOKIE,
     value: token,
     httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
+    secure: SESSION_COOKIE_SECURE,
     sameSite: "lax",
     maxAge: SESSION_MAX_AGE,
     path: "/",
