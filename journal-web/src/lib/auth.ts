@@ -16,15 +16,17 @@ function getSecret() {
   return encoder.encode(secret);
 }
 
-function readOnlyCookies(): CookieStore {
-  return cookies() as unknown as CookieStore;
+async function readOnlyCookies(): Promise<CookieStore> {
+  return (await cookies()) as unknown as CookieStore;
 }
 
-function mutableCookies(): CookieStore & {
-  set: CookieStore["set"];
-  delete: CookieStore["delete"];
-} {
-  return cookies() as unknown as CookieStore & {
+async function mutableCookies(): Promise<
+  CookieStore & {
+    set: CookieStore["set"];
+    delete: CookieStore["delete"];
+  }
+> {
+  return (await cookies()) as unknown as CookieStore & {
     set: CookieStore["set"];
     delete: CookieStore["delete"];
   };
@@ -37,7 +39,8 @@ export async function setSessionCookie(userId: string) {
     .setExpirationTime(`${SESSION_MAX_AGE}s`)
     .sign(getSecret());
 
-  mutableCookies().set({
+  const store = await mutableCookies();
+  store.set({
     name: SESSION_COOKIE,
     value: token,
     httpOnly: true,
@@ -49,7 +52,7 @@ export async function setSessionCookie(userId: string) {
 }
 
 export async function getSessionUserId(): Promise<string | null> {
-  const token = readOnlyCookies().get(SESSION_COOKIE)?.value;
+  const token = (await readOnlyCookies()).get(SESSION_COOKIE)?.value;
   if (!token) {
     return null;
   }
@@ -62,6 +65,7 @@ export async function getSessionUserId(): Promise<string | null> {
   }
 }
 
-export function clearSessionCookie() {
-  mutableCookies().delete(SESSION_COOKIE);
+export async function clearSessionCookie() {
+  const store = await mutableCookies();
+  store.delete(SESSION_COOKIE);
 }
