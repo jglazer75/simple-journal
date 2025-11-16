@@ -327,6 +327,13 @@ The `dotenv-cli` helper loads `/home/jglazer/docker/simple-journal/.env` automat
 
 ## 10. Phased Development Plan
 
+Current implementation status:
+
+- **Phase 0 – Infrastructure & Scaffolding:** ✅ Completed (Dockerized Next.js app, Compose + Prisma, migrations + seeds, `.env` workflow).
+- **Phase 1 – Passcode Lock:** ✅ Completed (argon2 hashing, JWT cookie, configurable secure flag, passcode gate UI).
+- **Phase 2 – Anger + Gratitude:** ✅ Anger + Gratitude entry forms persist via `/api/entries`, auto-title counters, history list powered by Prisma (anger reason shown when long-form body empty). Creative + Ollama flow still pending.
+- **Phase 3 – Creative + Ollama / Phase 4 – Polish:** ❌ Not started.
+
 ### **Phase 0 – Infrastructure & Scaffolding**
 
 * Create Next.js project.

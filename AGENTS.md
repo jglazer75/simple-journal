@@ -306,6 +306,13 @@ server {
 
 ## 10. Phased Development Plan
 
+### Progress Snapshot (Nov 16, 2025)
+
+- **Phase 0 – Infrastructure & Scaffolding**: ✅ Complete (Next.js app, Docker/Compose, Prisma schema + migrations + seeds wired to Postgres on `ogsdell-network`).
+- **Phase 1 – Passcode Lock**: ✅ Complete (argon2 hashing, JWT cookie with configurable secure flag, passcode UI gate, `/api/auth/*` routes).
+- **Phase 2 – Anger + Gratitude**: ✅ Anger + Gratitude flows persist entries with auto-titled counters; history view lists recent entries and shows anger reasons if the long-form body is empty. Creative + Ollama work still pending.
+- **Phase 3 & 4**: Not started.
+
 ### **Phase 0 – Infrastructure & Scaffolding**
 
 * Create Next.js project.
