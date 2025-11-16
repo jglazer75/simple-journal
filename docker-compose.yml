@@ -1,0 +1,54 @@
+services:
+  journal-web:
+    container_name: journal-web
+    build:
+      context: ./journal-web
+      target: runner
+    env_file:
+      - .env
+    environment:
+      NODE_ENV: production
+      PORT: 3000
+    ports:
+      - "3000:3000"
+    depends_on:
+      - postgresql-postgres-1
+      - redis-redis-1
+    restart: unless-stopped
+    networks:
+      - ogsdell-network
+
+  postgresql-postgres-1:
+    image: postgres:16-alpine
+    container_name: postgresql-postgres-1
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-journal}
+      POSTGRES_USER: ${POSTGRES_USER:-journal}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-journal}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    restart: unless-stopped
+    networks:
+      - ogsdell-network
+
+  redis-redis-1:
+    image: redis:7-alpine
+    container_name: redis-redis-1
+    command: ["redis-server", "--save", "", "--appendonly", "no"]
+    volumes:
+      - redis_data:/data
+    ports:
+      - "6379:6379"
+    restart: unless-stopped
+    networks:
+      - ogsdell-network
+
+volumes:
+  postgres_data:
+  redis_data:
+
+networks:
+  ogsdell-network:
+    name: ogsdell-network
