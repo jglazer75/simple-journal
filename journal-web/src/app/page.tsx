@@ -13,6 +13,32 @@ type JournalEntryDto = {
   angerReason?: string | null;
   gratitudePromptId?: string | null;
   creativePromptId?: string | null;
+  gratitudePrompt?: {
+    id: string;
+    promptText: string;
+  } | null;
+  creativePrompt?: {
+    id: string;
+    promptText: string;
+  } | null;
+};
+
+type GratitudePromptDto = {
+  id: string;
+  text: string;
+};
+
+type CreativePersonaDto = {
+  id: string;
+  name: string;
+  description: string;
+};
+
+type CreativePromptDto = {
+  id: string;
+  text: string;
+  personas: CreativePersonaDto[];
+  fromOllama: boolean;
 };
 
 const TABS: { id: TabId; label: string; description: string }[] = [
@@ -31,20 +57,6 @@ const TABS: { id: TabId; label: string; description: string }[] = [
     label: "✍️ Creative",
     description: "Markdown stories + AI prompts.",
   },
-];
-
-const GRATITUDE_PROMPTS = [
-  "What small kindness did someone offer recently?",
-  "Name a routine that quietly improves your day.",
-  "Recall a time you felt seen or heard this week.",
-  "What detail about your space feels comforting right now?",
-];
-
-const CREATIVE_PERSONAS = [
-  { id: "mythic", name: "Mythic Sage", description: "Dreamlike folklore tone." },
-  { id: "noir", name: "Noir Detective", description: "Gritty internal monologue." },
-  { id: "sci", name: "Soft Sci-Fi", description: "Hopeful future vignette." },
-  { id: "memoir", name: "Memoirist", description: "Grounded, sensory memories." },
 ];
 
 const ENTRY_EMOJI_BY_TYPE: Record<EntryTypeValue, string> = {
@@ -67,6 +79,10 @@ type AuthState = {
 
 type EntryFormProps = {
   onEntrySaved: () => void;
+};
+
+type HistoryPreviewProps = {
+  refreshKey: number;
 };
 
 type FormStatus = {
@@ -355,21 +371,44 @@ function AngerEntry({ onEntrySaved }: EntryFormProps) {
 }
 
 function GratitudeEntry({ onEntrySaved }: EntryFormProps) {
-  const [promptIndex, setPromptIndex] = useState(() =>
-    Math.floor(Math.random() * GRATITUDE_PROMPTS.length),
-  );
+  const [prompt, setPrompt] = useState<GratitudePromptDto | null>(null);
+  const [promptLoading, setPromptLoading] = useState(false);
+  const [promptError, setPromptError] = useState<string | null>(null);
   const [reflection, setReflection] = useState("");
   const [status, setStatus] = useState<FormStatus | null>(null);
   const [saving, setSaving] = useState(false);
 
-  const promptText = GRATITUDE_PROMPTS[promptIndex];
+  const fetchPrompt = useCallback(async () => {
+    setPromptLoading(true);
+    setPromptError(null);
+    try {
+      const response = await fetch("/api/prompts/gratitude/random", {
+        method: "GET",
+        cache: "no-store",
+      });
+      const data = (await response.json().catch(() => ({}))) as {
+        prompt?: { id: string; text: string };
+        error?: string;
+      };
+      if (!response.ok || !data.prompt) {
+        throw new Error(data.error ?? "Unable to load gratitude prompt.");
+      }
+      setPrompt({ id: data.prompt.id, text: data.prompt.text });
+    } catch (error) {
+      setPrompt(null);
+      setPromptError(
+        error instanceof Error
+          ? error.message
+          : "Unexpected error loading prompt.",
+      );
+    } finally {
+      setPromptLoading(false);
+    }
+  }, []);
 
-  const cyclePrompt = () => {
-    setPromptIndex((current) => {
-      const next = (current + 1) % GRATITUDE_PROMPTS.length;
-      return next;
-    });
-  };
+  useEffect(() => {
+    void fetchPrompt();
+  }, [fetchPrompt]);
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -379,6 +418,7 @@ function GratitudeEntry({ onEntrySaved }: EntryFormProps) {
       const entry = await createEntry({
         entryType: "gratitude",
         bodyMarkdown: reflection,
+        gratitudePromptId: prompt?.id,
       });
       setStatus({
         tone: "success",
@@ -409,16 +449,24 @@ function GratitudeEntry({ onEntrySaved }: EntryFormProps) {
           <p className="text-xs font-semibold uppercase tracking-[0.3em] text-[var(--muted)]">
             Random prompt
           </p>
-          <p className="text-2xl font-semibold text-slate-900">{promptText}</p>
+          <p className="text-2xl font-semibold text-slate-900">
+            {prompt?.text ?? "Fetching something to appreciate…"}
+          </p>
         </div>
         <button
           type="button"
-          onClick={cyclePrompt}
-          className="self-start rounded-full border border-black/10 px-4 py-2 text-sm font-semibold text-slate-700 transition hover:border-black/30 hover:bg-white"
+          onClick={() => {
+            void fetchPrompt();
+          }}
+          disabled={promptLoading}
+          className="self-start rounded-full border border-black/10 px-4 py-2 text-sm font-semibold text-slate-700 transition hover:border-black/30 hover:bg-white disabled:cursor-not-allowed disabled:opacity-50"
         >
-          New prompt
+          {promptLoading ? "Loading…" : "New prompt"}
         </button>
       </div>
+      {promptError ? (
+        <p className="text-sm text-red-600">{promptError}</p>
+      ) : null}
       <label className="flex flex-col gap-2">
         <span className="text-sm font-semibold text-slate-600">
           Reflection
@@ -433,7 +481,7 @@ function GratitudeEntry({ onEntrySaved }: EntryFormProps) {
       </label>
       <StatusBanner status={status} />
       <div className="flex flex-col gap-2 text-sm text-slate-500 md:flex-row md:items-center md:justify-between">
-        <p>100 curated prompts seed the DB later. This is a local preview.</p>
+        <p>{prompt?.text ? "Prompt pulled straight from Postgres." : "Connect to fetch one of the seeded prompts."}</p>
         <button
           type="submit"
           disabled={saving}
@@ -447,47 +495,138 @@ function GratitudeEntry({ onEntrySaved }: EntryFormProps) {
 }
 
 function CreativeEntry({ onEntrySaved }: EntryFormProps) {
-  const [selectedPersonas, setSelectedPersonas] = useState<string[]>([
-    CREATIVE_PERSONAS[0]?.id ?? "",
-  ]);
-  const [prompt, setPrompt] = useState(
-    "Tap “Generate prompt” to ask the internal Ollama instance for a tailored idea.",
-  );
+  const [personas, setPersonas] = useState<CreativePersonaDto[]>([]);
+  const [selectedPersonas, setSelectedPersonas] = useState<string[]>([]);
+  const [personasLoading, setPersonasLoading] = useState(true);
+  const [personasError, setPersonasError] = useState<string | null>(null);
+  const [promptState, setPromptState] = useState<CreativePromptDto | null>(null);
+  const [promptNotice, setPromptNotice] = useState<string | null>(null);
+  const [promptError, setPromptError] = useState<string | null>(null);
+  const [promptLoading, setPromptLoading] = useState(false);
   const [body, setBody] = useState("");
   const [status, setStatus] = useState<FormStatus | null>(null);
   const [saving, setSaving] = useState(false);
 
+  const loadPersonas = useCallback(async () => {
+    setPersonasLoading(true);
+    setPersonasError(null);
+    try {
+      const response = await fetch("/api/prompts/creative/personas", {
+        method: "GET",
+        cache: "no-store",
+      });
+      const data = (await response.json().catch(() => ({}))) as {
+        personas?: CreativePersonaDto[];
+        error?: string;
+      };
+      if (!response.ok || !data.personas) {
+        throw new Error(data.error ?? "Unable to load personas.");
+      }
+      const serverPersonas = data.personas;
+      setPersonas(serverPersonas);
+      setSelectedPersonas((current) => {
+        const stillValid = current.filter((id) =>
+          serverPersonas.some((persona) => persona.id === id),
+        );
+        if (stillValid.length > 0) {
+          return stillValid;
+        }
+        return serverPersonas.length > 0 ? [serverPersonas[0].id] : [];
+      });
+    } catch (error) {
+      setPersonas([]);
+      setSelectedPersonas([]);
+      setPersonasError(
+        error instanceof Error ? error.message : "Unable to fetch personas.",
+      );
+    } finally {
+      setPersonasLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    void loadPersonas();
+  }, [loadPersonas]);
+
   const togglePersona = (id: string) => {
-    setSelectedPersonas((current) =>
-      current.includes(id)
-        ? current.filter((persona) => persona !== id)
-        : [...current, id],
-    );
+    setSelectedPersonas((current) => {
+      const isActive = current.includes(id);
+      if (isActive) {
+        return current.filter((persona) => persona !== id);
+      }
+      return [...current, id];
+    });
+    setPromptState(null);
+    setPromptNotice(null);
+    setPromptError(null);
   };
 
   const personaSummary = useMemo(() => {
-    return CREATIVE_PERSONAS.filter((persona) =>
+    const selected = personas.filter((persona) =>
       selectedPersonas.includes(persona.id),
-    )
-      .map((persona) => persona.name)
-      .join(", ");
-  }, [selectedPersonas]);
-
-  const generatePrompt = () => {
-    setPrompt(
-      `Ollama → “${personaSummary || "Choose personas"}” persona mix\n` +
-        "Output will appear here before saving to creative_prompts.",
     );
+    return selected.map((persona) => persona.name).join(", ");
+  }, [personas, selectedPersonas]);
+
+  const generatePrompt = async () => {
+    if (selectedPersonas.length === 0) {
+      setPromptState(null);
+      setPromptNotice(null);
+      setPromptError("Choose at least one persona to shape the prompt.");
+      return;
+    }
+
+    setPromptLoading(true);
+    setPromptError(null);
+    setPromptNotice(null);
+    try {
+      const response = await fetch("/api/prompts/creative", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ personaIds: selectedPersonas }),
+      });
+      const data = (await response.json().catch(() => ({}))) as {
+        prompt?: CreativePromptDto;
+        error?: string;
+      };
+      if (!response.ok || !data.prompt) {
+        throw new Error(data.error ?? "Unable to generate prompt.");
+      }
+      setPromptState(data.prompt);
+      setPromptNotice(
+        data.prompt.fromOllama
+          ? "Generated via local Ollama."
+          : "Fallback prompt saved while Ollama is offline.",
+      );
+    } catch (error) {
+      setPromptState(null);
+      setPromptNotice(null);
+      setPromptError(
+        error instanceof Error
+          ? error.message
+          : "Unexpected error while generating prompt.",
+      );
+    } finally {
+      setPromptLoading(false);
+    }
   };
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setStatus(null);
+    if (!promptState) {
+      setStatus({
+        tone: "error",
+        message: "Generate a prompt first so we can link it to your entry.",
+      });
+      return;
+    }
     try {
       setSaving(true);
       const entry = await createEntry({
         entryType: "creative",
         bodyMarkdown: body,
+        creativePromptId: promptState.id,
       });
       setStatus({
         tone: "success",
@@ -511,68 +650,126 @@ function CreativeEntry({ onEntrySaved }: EntryFormProps) {
       onSubmit={handleSubmit}
       className="space-y-6 rounded-3xl border border-black/10 bg-white/90 p-6 shadow-lg shadow-purple-50"
     >
-      <div className="space-y-2">
-        <p className="text-xs font-semibold uppercase tracking-[0.3em] text-[var(--muted)]">
-          Personas
-        </p>
-        <div className="flex flex-wrap gap-3">
-          {CREATIVE_PERSONAS.map((persona) => {
-            const isActive = selectedPersonas.includes(persona.id);
-            return (
-              <button
-                key={persona.id}
-                type="button"
-                onClick={() => togglePersona(persona.id)}
-                className={`rounded-2xl border px-4 py-3 text-left transition ${
-                  isActive
-                    ? "border-transparent bg-slate-900 text-white shadow-md shadow-slate-900/40"
-                    : "border-black/10 bg-white text-slate-700 hover:border-black/30"
-                }`}
-              >
-                <p className="text-sm font-semibold">{persona.name}</p>
-                <p className="text-xs text-slate-500">{persona.description}</p>
-              </button>
-            );
-          })}
+      <div className="space-y-3">
+        <div className="flex items-center justify-between">
+          <p className="text-xs font-semibold uppercase tracking-[0.3em] text-[var(--muted)]">
+            Personas
+          </p>
+          <button
+            type="button"
+            onClick={() => {
+              void loadPersonas();
+            }}
+            disabled={personasLoading}
+            className="text-xs font-semibold uppercase tracking-[0.2em] text-purple-600 disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            {personasLoading ? "Refreshing…" : "Refresh list"}
+          </button>
         </div>
+        <div className="flex flex-wrap gap-3">
+          {personasLoading ? (
+            <p className="text-sm text-slate-500">Loading personas…</p>
+          ) : personas.length === 0 ? (
+            <p className="text-sm text-red-600">
+              {personasError ??
+                "No personas available. Seed the DB to enable creative mode."}
+            </p>
+          ) : (
+            personas.map((persona) => {
+              const isActive = selectedPersonas.includes(persona.id);
+              return (
+                <button
+                  key={persona.id}
+                  type="button"
+                  onClick={() => togglePersona(persona.id)}
+                  className={`rounded-2xl border px-4 py-3 text-left transition ${
+                    isActive
+                      ? "border-transparent bg-[var(--foreground)]/90 text-white shadow-lg shadow-[var(--foreground)]/30"
+                      : "border-black/10 bg-white text-slate-800 hover:border-black/30"
+                  }`}
+                >
+                  <span className="block text-base font-semibold">{persona.name}</span>
+                  <span
+                    className={`text-sm ${
+                      isActive ? "text-white/70" : "text-slate-500"
+                    }`}
+                  >
+                    {persona.description}
+                  </span>
+                </button>
+              );
+            })
+          )}
+        </div>
+        <p className="text-sm text-slate-500">
+          {personaSummary
+            ? `Mixing: ${personaSummary}`
+            : "Choose at least one persona to shape the AI prompt."}
+        </p>
+        {personasError && personas.length > 0 ? (
+          <p className="text-sm text-red-600">{personasError}</p>
+        ) : null}
       </div>
 
-      <div className="space-y-3 rounded-2xl border border-dashed border-black/15 bg-slate-50/60 p-4">
-        <p className="text-xs font-semibold uppercase tracking-[0.3em] text-[var(--muted)]">
-          AI prompt preview
-        </p>
-        <p className="whitespace-pre-line text-base text-slate-800">{prompt}</p>
-        <button
-          type="button"
-          onClick={generatePrompt}
-          className="self-start rounded-full border border-black/10 bg-white px-4 py-2 text-sm font-semibold text-slate-800 transition hover:border-black/30"
-        >
-          Generate prompt
-        </button>
+      <div className="space-y-3 rounded-2xl border border-dashed border-purple-200 bg-purple-50/60 p-4">
+        <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-[0.3em] text-purple-600">
+              AI prompt
+            </p>
+            <p className="text-sm text-purple-800">
+              Internal Ollama (mistral / gpt-oss) blends the selected personas into one idea.
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={() => {
+              void generatePrompt();
+            }}
+            disabled={promptLoading || personas.length === 0}
+            className="self-start rounded-full bg-[var(--foreground)]/90 px-4 py-2 text-sm font-semibold text-white shadow-lg shadow-[var(--foreground)]/30 transition hover:scale-[1.01] disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            {promptLoading ? "Generating…" : "Generate prompt"}
+          </button>
+        </div>
+        <div className="rounded-2xl border border-purple-200 bg-white/80 px-4 py-3 text-sm text-slate-800">
+          <p className="whitespace-pre-line">
+            {promptState?.text ??
+              "Tap “Generate prompt” to ask the internal Ollama instance for a tailored idea."}
+          </p>
+        </div>
+        {promptNotice ? (
+          <p className="text-xs uppercase tracking-[0.2em] text-purple-600">
+            {promptNotice}
+          </p>
+        ) : null}
+        {promptError ? (
+          <p className="text-sm text-red-600">{promptError}</p>
+        ) : null}
       </div>
 
       <label className="flex flex-col gap-2">
         <span className="text-sm font-semibold text-slate-600">
-          Markdown draft
+          Markdown entry
         </span>
         <textarea
           value={body}
           onChange={(event) => setBody(event.target.value)}
           rows={8}
-          placeholder="## Let ideas breathe\n\nWrite long-form entries with full Markdown support soon."
-          className="rounded-2xl border border-black/10 bg-white px-4 py-3 font-mono text-sm text-slate-900 outline-none transition focus:border-indigo-400 focus:ring-2 focus:ring-indigo-200"
+          placeholder="Use Markdown (### headings, **bold**, lists) to expand the prompt into something personal."
+          className="rounded-2xl border border-black/10 bg-white px-4 py-3 font-mono text-base leading-relaxed text-slate-900 outline-none transition focus:border-purple-400 focus:ring-2 focus:ring-purple-200"
         />
+        <span className="text-xs text-slate-500">
+          Markdown stored verbatim: italics, lists, and checkboxes are all kept.
+        </span>
       </label>
-
       <StatusBanner status={status} />
       <div className="flex flex-col gap-2 text-sm text-slate-500 md:flex-row md:items-center md:justify-between">
-        <p>
-          Entries will be titled automatically (<span className="font-semibold">✍️ 00X</span>).
-        </p>
+        <p>Prompt + entry are saved together once you hit save.</p>
         <button
           type="submit"
           disabled={saving}
-          className="rounded-full bg-slate-900 px-5 py-2 text-sm font-semibold text-white shadow-lg shadow-slate-900/40 transition hover:scale-[1.01] disabled:cursor-not-allowed disabled:opacity-50"
+          className="rounded-full bg-[var(--foreground)]/90 px-5 py-2 text-sm font-semibold text-white shadow-lg shadow-[var(--foreground)]/30 transition hover:scale-[1.01] disabled:cursor-not-allowed disabled:opacity-50"
         >
           {saving ? "Saving…" : "Save creative entry"}
         </button>
@@ -580,11 +777,6 @@ function CreativeEntry({ onEntrySaved }: EntryFormProps) {
     </form>
   );
 }
-
-type HistoryPreviewProps = {
-  refreshKey: number;
-};
-
 function HistoryPreview({ refreshKey }: HistoryPreviewProps) {
   const [entries, setEntries] = useState<JournalEntryDto[]>([]);
   const [loading, setLoading] = useState(true);
@@ -653,6 +845,16 @@ function HistoryPreview({ refreshKey }: HistoryPreviewProps) {
             snippet = trimmed.length > 120 ? `${trimmed.slice(0, 120)}…` : trimmed;
           } else if (entry.entryType === "ANGER" && entry.angerReason) {
             snippet = entry.angerReason;
+          } else if (
+            entry.entryType === "GRATITUDE" &&
+            entry.gratitudePrompt?.promptText
+          ) {
+            snippet = entry.gratitudePrompt.promptText;
+          } else if (
+            entry.entryType === "CREATIVE" &&
+            entry.creativePrompt?.promptText
+          ) {
+            snippet = entry.creativePrompt.promptText;
           } else {
             snippet = "—";
           }
