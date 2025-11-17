@@ -503,6 +503,9 @@ function CreativeEntry({ onEntrySaved }: EntryFormProps) {
   const [promptNotice, setPromptNotice] = useState<string | null>(null);
   const [promptError, setPromptError] = useState<string | null>(null);
   const [promptLoading, setPromptLoading] = useState(false);
+  const [ollamaStatus, setOllamaStatus] = useState<
+    "unknown" | "online" | "offline"
+  >("unknown");
   const [body, setBody] = useState("");
   const [status, setStatus] = useState<FormStatus | null>(null);
   const [saving, setSaving] = useState(false);
@@ -579,6 +582,7 @@ function CreativeEntry({ onEntrySaved }: EntryFormProps) {
     setPromptLoading(true);
     setPromptError(null);
     setPromptNotice(null);
+    setOllamaStatus("unknown");
     try {
       const response = await fetch("/api/prompts/creative", {
         method: "POST",
@@ -598,6 +602,7 @@ function CreativeEntry({ onEntrySaved }: EntryFormProps) {
           ? "Generated via local Ollama."
           : "Fallback prompt saved while Ollama is offline.",
       );
+      setOllamaStatus(data.prompt.fromOllama ? "online" : "offline");
     } catch (error) {
       setPromptState(null);
       setPromptNotice(null);
@@ -606,6 +611,7 @@ function CreativeEntry({ onEntrySaved }: EntryFormProps) {
           ? error.message
           : "Unexpected error while generating prompt.",
       );
+      setOllamaStatus("offline");
     } finally {
       setPromptLoading(false);
     }
@@ -720,6 +726,23 @@ function CreativeEntry({ onEntrySaved }: EntryFormProps) {
             <p className="text-sm text-purple-800">
               Internal Ollama (mistral / gpt-oss) blends the selected personas into one idea.
             </p>
+            <p className="mt-1 inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.2em] text-purple-700">
+              <span
+                className={`inline-flex h-2.5 w-2.5 rounded-full ${
+                  ollamaStatus === "online"
+                    ? "bg-emerald-500 shadow-[0_0_6px_rgba(16,185,129,0.9)]"
+                    : ollamaStatus === "offline"
+                      ? "bg-red-500 shadow-[0_0_6px_rgba(239,68,68,0.7)]"
+                      : "bg-yellow-400 shadow-[0_0_6px_rgba(250,204,21,0.7)]"
+                }`}
+                aria-hidden
+              />
+              {ollamaStatus === "online"
+                ? "Ollama online"
+                : ollamaStatus === "offline"
+                  ? "Ollama offline (using fallback)"
+                  : "Checking Ollama…"}
+            </p>
           </div>
           <button
             type="button"
@@ -727,7 +750,13 @@ function CreativeEntry({ onEntrySaved }: EntryFormProps) {
               void generatePrompt();
             }}
             disabled={promptLoading || personas.length === 0}
-            className="self-start rounded-full bg-[var(--foreground)]/90 px-4 py-2 text-sm font-semibold text-white shadow-lg shadow-[var(--foreground)]/30 transition hover:scale-[1.01] disabled:cursor-not-allowed disabled:opacity-50"
+            className={`self-start rounded-full px-4 py-2 text-sm font-semibold text-white shadow-lg transition hover:scale-[1.01] disabled:cursor-not-allowed disabled:opacity-50 ${
+              ollamaStatus === "online"
+                ? "bg-emerald-600 shadow-emerald-500/40 hover:bg-emerald-500"
+                : ollamaStatus === "offline"
+                  ? "bg-red-600 shadow-red-500/40 hover:bg-red-500"
+                  : "bg-[var(--foreground)]/90 shadow-[var(--foreground)]/30"
+            }`}
           >
             {promptLoading ? "Generating…" : "Generate prompt"}
           </button>
