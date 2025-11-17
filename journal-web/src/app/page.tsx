@@ -1,6 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import Link from "next/link";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 type TabId = "anger" | "gratitude" | "creative";
 type EntryTypeValue = "ANGER" | "GRATITUDE" | "CREATIVE";
@@ -84,6 +85,23 @@ type EntryFormProps = {
 type HistoryPreviewProps = {
   refreshKey: number;
 };
+
+function useShortcut(letter: string, handler: () => void) {
+  useEffect(() => {
+    const listener = (event: KeyboardEvent) => {
+      if (
+        (event.ctrlKey || event.metaKey) &&
+        event.shiftKey &&
+        event.key.toLowerCase() === letter
+      ) {
+        event.preventDefault();
+        handler();
+      }
+    };
+    window.addEventListener("keydown", listener);
+    return () => window.removeEventListener("keydown", listener);
+  }, [handler, letter]);
+}
 
 type FormStatus = {
   message: string;
@@ -220,38 +238,45 @@ export default function Home() {
   }
 
   return (
-    <div className="min-h-screen px-4 py-10 text-slate-900">
-      <main className="mx-auto flex w-full max-w-5xl flex-col gap-8 rounded-[32px] bg-white/85 px-6 py-8 shadow-2xl ring-1 ring-black/5 backdrop-blur-md md:px-10 md:py-12">
-        <header className="space-y-2">
+    <div className="min-h-screen bg-[var(--background)] px-4 py-12 text-[var(--foreground)]">
+      <main className="mx-auto flex w-full max-w-4xl flex-col gap-10 rounded-[40px] border border-[var(--border-soft)] bg-[var(--surface)]/95 px-6 py-10 shadow-[var(--shadow-soft)] sm:px-10">
+        <header className="space-y-3">
           <p className="text-xs font-semibold uppercase tracking-[0.4em] text-[var(--muted)]">
-            simple journal
+            Simple Journal
           </p>
-          <h1 className="text-3xl font-semibold leading-tight text-[var(--foreground)] md:text-4xl">
-            Capture anger, gratitude, and creative sparks without leaving the
-            tailnet.
+          <h1 className="text-3xl font-semibold leading-tight text-[var(--foreground)] md:text-[40px]">
+            Quiet space for anger releases, gratitude notes, and creative sparks.
           </h1>
-          <p className="text-base text-slate-600 md:text-lg">
-            Local passcode lock. Auto-titled entries. Markdown-friendly creative
-            space backed by your private Ollama models.
+          <p className="text-base text-[var(--muted)]">
+            Minimal UI, thoughtful typography, and private Ollama prompts keep the focus on you—not the tool.
           </p>
+          <div>
+            <Link
+              href="/settings"
+              className="inline-flex items-center gap-2 rounded-full border border-[var(--border-soft)] px-4 py-2 text-sm font-semibold text-[var(--foreground)] transition hover:-translate-y-0.5 hover:bg-white"
+            >
+              Setup & Tips
+              <span aria-hidden>→</span>
+            </Link>
+          </div>
         </header>
 
-        <nav className="flex flex-wrap gap-3">
+        <nav className="flex flex-wrap gap-3 rounded-3xl border border-[var(--border-soft)] bg-[#fdfcf8] p-2">
           {TABS.map((tab) => (
             <button
               key={tab.id}
               type="button"
               onClick={() => setActiveTab(tab.id)}
-              className={`flex flex-1 min-w-[180px] flex-col rounded-2xl border px-4 py-3 text-left transition-all ${
+              className={`flex min-w-[150px] flex-1 flex-col rounded-2xl border px-4 py-3 text-left transition ${
                 activeTab === tab.id
-                  ? "border-transparent bg-[var(--foreground)]/90 text-white shadow-lg shadow-[var(--foreground)]/20"
-                  : "border-black/10 bg-white/70 text-slate-800 hover:border-black/30"
+                  ? "border-[#445272] bg-[#4b5a7a] text-white shadow-lg shadow-[#4b5a7a]/25"
+                  : "border-transparent text-[#494239] hover:border-[#5c5345]/20 hover:bg-white hover:text-[#2a2520]"
               }`}
             >
               <span className="text-base font-semibold">{tab.label}</span>
               <span
                 className={`text-sm md:text-xs ${
-                  activeTab === tab.id ? "text-white/80" : "text-slate-500"
+                  activeTab === tab.id ? "text-white/80" : "text-[var(--muted)]"
                 }`}
               >
                 {tab.description}
@@ -285,10 +310,17 @@ export default function Home() {
 }
 
 function AngerEntry({ onEntrySaved }: EntryFormProps) {
+  const formRef = useRef<HTMLFormElement>(null);
   const [reason, setReason] = useState("");
   const [body, setBody] = useState("");
   const [status, setStatus] = useState<FormStatus | null>(null);
   const [saving, setSaving] = useState(false);
+
+  const requestSubmit = useCallback(() => {
+    formRef.current?.requestSubmit();
+  }, []);
+
+  useShortcut("a", requestSubmit);
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -320,15 +352,16 @@ function AngerEntry({ onEntrySaved }: EntryFormProps) {
 
   return (
     <form
+      ref={formRef}
       onSubmit={handleSubmit}
-      className="space-y-6 rounded-3xl border border-black/10 bg-white/90 p-6 shadow-lg shadow-orange-50"
+      className="space-y-6 rounded-3xl border border-black/5 bg-white/95 p-6 shadow-[0_30px_60px_rgba(23,18,12,0.05)] md:p-8"
     >
       <div className="space-y-2">
         <p className="text-xs font-semibold uppercase tracking-[0.3em] text-[var(--muted)]">
           Guided prompt
         </p>
-        <p className="text-xl font-medium italic text-slate-800">
-          “I am angry because I care about...”
+        <p className="text-2xl font-medium leading-snug text-[#32271f]">
+          “I am angry because I care about…”
         </p>
       </div>
       <label className="flex flex-col gap-2">
@@ -357,11 +390,11 @@ function AngerEntry({ onEntrySaved }: EntryFormProps) {
       </label>
       <StatusBanner status={status} />
       <div className="flex flex-col gap-2 text-sm text-slate-500 md:flex-row md:items-center md:justify-between">
-        <p>Press <span className="font-semibold">A</span> to save once keyboard shortcuts ship.</p>
+        <p><span className="font-semibold">Ctrl/Cmd + Shift + A</span> saves instantly.</p>
         <button
           type="submit"
           disabled={saving}
-          className="rounded-full bg-[var(--accent-strong)] px-5 py-2 text-sm font-semibold text-white shadow-lg shadow-[var(--accent-strong)]/40 transition hover:scale-[1.01] disabled:cursor-not-allowed disabled:opacity-50"
+          className="rounded-full bg-[#b35442] px-6 py-2 text-sm font-semibold text-white shadow-lg shadow-[#b35442]/40 transition hover:translate-x-0.5 hover:-translate-y-0.5 hover:shadow-[0_20px_40px_rgba(179,84,66,0.35)] disabled:cursor-not-allowed disabled:opacity-60"
         >
           {saving ? "Saving…" : "Save anger entry"}
         </button>
@@ -371,12 +404,19 @@ function AngerEntry({ onEntrySaved }: EntryFormProps) {
 }
 
 function GratitudeEntry({ onEntrySaved }: EntryFormProps) {
+  const formRef = useRef<HTMLFormElement>(null);
   const [prompt, setPrompt] = useState<GratitudePromptDto | null>(null);
   const [promptLoading, setPromptLoading] = useState(false);
   const [promptError, setPromptError] = useState<string | null>(null);
   const [reflection, setReflection] = useState("");
   const [status, setStatus] = useState<FormStatus | null>(null);
   const [saving, setSaving] = useState(false);
+
+  const requestSubmit = useCallback(() => {
+    formRef.current?.requestSubmit();
+  }, []);
+
+  useShortcut("g", requestSubmit);
 
   const fetchPrompt = useCallback(async () => {
     setPromptLoading(true);
@@ -441,8 +481,9 @@ function GratitudeEntry({ onEntrySaved }: EntryFormProps) {
 
   return (
     <form
+      ref={formRef}
       onSubmit={handleSubmit}
-      className="space-y-6 rounded-3xl border border-black/10 bg-white/90 p-6 shadow-lg shadow-yellow-50"
+      className="space-y-6 rounded-3xl border border-black/5 bg-white/95 p-6 shadow-[0_30px_60px_rgba(23,18,12,0.05)] md:p-8"
     >
       <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
         <div className="space-y-1">
@@ -480,12 +521,21 @@ function GratitudeEntry({ onEntrySaved }: EntryFormProps) {
         />
       </label>
       <StatusBanner status={status} />
-      <div className="flex flex-col gap-2 text-sm text-slate-500 md:flex-row md:items-center md:justify-between">
-        <p>{prompt?.text ? "Prompt pulled straight from Postgres." : "Connect to fetch one of the seeded prompts."}</p>
+      <div className="flex flex-col gap-3 text-sm text-slate-500 md:flex-row md:items-center md:justify-between">
+        <div>
+          <p>
+            {prompt?.text
+              ? "Prompt pulled straight from Postgres."
+              : "Connect to fetch one of the seeded prompts."}
+          </p>
+          <p>
+            <span className="font-semibold">Ctrl/Cmd + Shift + G</span> saves this entry.
+          </p>
+        </div>
         <button
           type="submit"
           disabled={saving}
-          className="rounded-full bg-[var(--accent)] px-5 py-2 text-sm font-semibold text-slate-900 shadow-lg shadow-[var(--accent)]/40 transition hover:scale-[1.01] disabled:cursor-not-allowed disabled:opacity-50"
+          className="rounded-full bg-[#3a604f] px-6 py-2 text-sm font-semibold text-white shadow-lg shadow-[#3a604f]/40 transition hover:-translate-y-0.5 hover:shadow-[0_20px_40px_rgba(58,96,79,0.45)] disabled:cursor-not-allowed disabled:opacity-60"
         >
           {saving ? "Saving…" : "Save gratitude entry"}
         </button>
@@ -495,6 +545,7 @@ function GratitudeEntry({ onEntrySaved }: EntryFormProps) {
 }
 
 function CreativeEntry({ onEntrySaved }: EntryFormProps) {
+  const formRef = useRef<HTMLFormElement>(null);
   const [personas, setPersonas] = useState<CreativePersonaDto[]>([]);
   const [selectedPersonas, setSelectedPersonas] = useState<string[]>([]);
   const [personasLoading, setPersonasLoading] = useState(true);
@@ -509,6 +560,12 @@ function CreativeEntry({ onEntrySaved }: EntryFormProps) {
   const [body, setBody] = useState("");
   const [status, setStatus] = useState<FormStatus | null>(null);
   const [saving, setSaving] = useState(false);
+
+  const requestSubmit = useCallback(() => {
+    formRef.current?.requestSubmit();
+  }, []);
+
+  useShortcut("c", requestSubmit);
 
   const loadPersonas = useCallback(async () => {
     setPersonasLoading(true);
@@ -653,8 +710,9 @@ function CreativeEntry({ onEntrySaved }: EntryFormProps) {
 
   return (
     <form
+      ref={formRef}
       onSubmit={handleSubmit}
-      className="space-y-6 rounded-3xl border border-black/10 bg-white/90 p-6 shadow-lg shadow-purple-50"
+      className="space-y-6 rounded-3xl border border-black/5 bg-white/95 p-6 shadow-[0_30px_60px_rgba(23,18,12,0.05)] md:p-8"
     >
       <div className="space-y-3">
         <div className="flex items-center justify-between">
@@ -690,14 +748,14 @@ function CreativeEntry({ onEntrySaved }: EntryFormProps) {
                   onClick={() => togglePersona(persona.id)}
                   className={`rounded-2xl border px-4 py-3 text-left transition ${
                     isActive
-                      ? "border-transparent bg-[var(--foreground)]/90 text-white shadow-lg shadow-[var(--foreground)]/30"
+                      ? "border-[#1d1a14] bg-[#1d1a14] text-white shadow-lg shadow-[#1d1a14]/30"
                       : "border-black/10 bg-white text-slate-800 hover:border-black/30"
                   }`}
                 >
                   <span className="block text-base font-semibold">{persona.name}</span>
                   <span
                     className={`text-sm ${
-                      isActive ? "text-white/70" : "text-slate-500"
+                      isActive ? "text-white/85" : "text-slate-500"
                     }`}
                   >
                     {persona.description}
@@ -717,16 +775,16 @@ function CreativeEntry({ onEntrySaved }: EntryFormProps) {
         ) : null}
       </div>
 
-      <div className="space-y-3 rounded-2xl border border-dashed border-purple-200 bg-purple-50/60 p-4">
+      <div className="space-y-3 rounded-2xl border border-dashed border-[#c5d4f4] bg-[#eef2fe] p-4">
         <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
           <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.3em] text-purple-600">
+            <p className="text-xs font-semibold uppercase tracking-[0.3em] text-[#5360a7]">
               AI prompt
             </p>
-            <p className="text-sm text-purple-800">
+            <p className="text-sm text-[#3b446d]">
               Internal Ollama (mistral / gpt-oss) blends the selected personas into one idea.
             </p>
-            <p className="mt-1 inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.2em] text-purple-700">
+            <p className="mt-1 inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.2em] text-[#3b446d]">
               <span
                 className={`inline-flex h-2.5 w-2.5 rounded-full ${
                   ollamaStatus === "online"
@@ -750,18 +808,18 @@ function CreativeEntry({ onEntrySaved }: EntryFormProps) {
               void generatePrompt();
             }}
             disabled={promptLoading || personas.length === 0}
-            className={`self-start rounded-full px-4 py-2 text-sm font-semibold text-white shadow-lg transition hover:scale-[1.01] disabled:cursor-not-allowed disabled:opacity-50 ${
+            className={`self-start rounded-full px-4 py-2 text-sm font-semibold text-white shadow-lg transition hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-60 ${
               ollamaStatus === "online"
-                ? "bg-emerald-600 shadow-emerald-500/40 hover:bg-emerald-500"
+                ? "bg-[#127150] shadow-[#127150]/40 hover:shadow-[0_20px_40px_rgba(18,113,80,0.45)]"
                 : ollamaStatus === "offline"
-                  ? "bg-red-600 shadow-red-500/40 hover:bg-red-500"
-                  : "bg-[var(--foreground)]/90 shadow-[var(--foreground)]/30"
+                  ? "bg-[#c0392b] shadow-[#c0392b]/40 hover:shadow-[0_20px_40px_rgba(192,57,43,0.45)]"
+                  : "bg-[#384a8c] shadow-[#384a8c]/40 hover:shadow-[0_20px_40px_rgba(56,74,140,0.45)]"
             }`}
           >
             {promptLoading ? "Generating…" : "Generate prompt"}
           </button>
         </div>
-        <div className="rounded-2xl border border-purple-200 bg-white/80 px-4 py-3 text-sm text-slate-800">
+        <div className="rounded-2xl border border-[#d9e3ff] bg-white px-4 py-3 text-sm text-[#273048]">
           <p className="whitespace-pre-line">
             {promptState?.text ??
               "Tap “Generate prompt” to ask the internal Ollama instance for a tailored idea."}
@@ -793,12 +851,15 @@ function CreativeEntry({ onEntrySaved }: EntryFormProps) {
         </span>
       </label>
       <StatusBanner status={status} />
-      <div className="flex flex-col gap-2 text-sm text-slate-500 md:flex-row md:items-center md:justify-between">
-        <p>Prompt + entry are saved together once you hit save.</p>
+      <div className="flex flex-col gap-3 text-sm text-slate-500 md:flex-row md:items-center md:justify-between">
+        <p>
+          Prompt + entry save together. Press
+          <span className="font-semibold"> Ctrl/Cmd + Shift + C</span> anytime.
+        </p>
         <button
           type="submit"
           disabled={saving}
-          className="rounded-full bg-[var(--foreground)]/90 px-5 py-2 text-sm font-semibold text-white shadow-lg shadow-[var(--foreground)]/30 transition hover:scale-[1.01] disabled:cursor-not-allowed disabled:opacity-50"
+          className="rounded-full bg-[#364685] px-6 py-2 text-sm font-semibold text-white shadow-lg shadow-[#364685]/40 transition hover:-translate-y-0.5 hover:shadow-[0_20px_40px_rgba(54,70,133,0.45)] disabled:cursor-not-allowed disabled:opacity-60"
         >
           {saving ? "Saving…" : "Save creative entry"}
         </button>
@@ -849,17 +910,17 @@ function HistoryPreview({ refreshKey }: HistoryPreviewProps) {
   let content: React.ReactNode;
   if (loading) {
     content = (
-      <p className="text-sm text-white/70">Loading recent entries…</p>
+      <p className="text-sm text-[var(--muted)]">Loading recent entries…</p>
     );
   } else if (error) {
     content = (
-      <div className="rounded-2xl border border-red-300 bg-red-50/20 px-4 py-3 text-sm text-red-100">
+      <div className="rounded-2xl border border-red-100 bg-red-50 px-4 py-3 text-sm text-red-700">
         {error}
       </div>
     );
   } else if (entries.length === 0) {
     content = (
-      <p className="text-sm text-white/70">
+      <p className="text-sm text-[var(--muted)]">
         Entries you save will appear here. Start with a quick anger release.
       </p>
     );
@@ -888,17 +949,22 @@ function HistoryPreview({ refreshKey }: HistoryPreviewProps) {
             snippet = "—";
           }
           return (
-            <li
-              key={entry.id}
-              className="flex flex-col gap-1 rounded-2xl bg-white/5 px-4 py-3 text-sm text-white/80 md:flex-row md:items-center md:justify-between"
-            >
-              <div className="font-semibold text-white">
-                {emoji} {entry.title}
-              </div>
-              <p className="text-white/70">{snippet}</p>
-              <span className="text-xs uppercase tracking-wide text-white/60">
-                {formatEntryTimestamp(entry.createdAt)}
-              </span>
+            <li key={entry.id}>
+              <Link
+                href={`/entries/${entry.id}`}
+                className="group flex flex-col gap-2 rounded-2xl border border-[#d6d0c7] bg-white px-4 py-3 text-sm text-[#2b2520] transition hover:-translate-y-0.5 hover:border-[#c1b8ab] md:flex-row md:items-center md:justify-between"
+              >
+                <div className="text-base font-semibold text-[#201b16]">
+                  {emoji} {entry.title}
+                </div>
+                <p className="text-sm text-[#4b443a] md:flex-1 md:px-4">{snippet}</p>
+                <div className="flex items-center gap-3 text-xs font-semibold text-[#4b5a7a]">
+                  <span className="uppercase tracking-wide text-[#6d6456]">
+                    {formatEntryTimestamp(entry.createdAt)}
+                  </span>
+                  <span className="text-[#4b5a7a] group-hover:text-[#2f3a58]">Open →</span>
+                </div>
+              </Link>
             </li>
           );
         })}
@@ -907,14 +973,14 @@ function HistoryPreview({ refreshKey }: HistoryPreviewProps) {
   }
 
   return (
-    <section className="rounded-3xl border border-black/10 bg-slate-900/95 p-6 text-white shadow-2xl shadow-slate-900/40">
+    <section className="rounded-3xl border border-black/5 bg-white/95 p-6 shadow-[0_30px_60px_rgba(23,18,12,0.05)] md:p-8">
       <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
         <div>
-          <p className="text-xs font-semibold uppercase tracking-[0.3em] text-white/60">
+          <p className="text-xs font-semibold uppercase tracking-[0.3em] text-[var(--muted)]">
             Recent entries
           </p>
-          <h2 className="text-2xl font-semibold">History snapshot</h2>
-          <p className="text-sm text-white/70">
+          <h2 className="text-2xl font-semibold text-[var(--foreground)]">History snapshot</h2>
+          <p className="text-sm text-[var(--muted)]">
             The five most recent thoughts across anger, gratitude, and creative.
           </p>
         </div>
@@ -923,7 +989,7 @@ function HistoryPreview({ refreshKey }: HistoryPreviewProps) {
           onClick={() => {
             void fetchHistory();
           }}
-          className="rounded-full border border-white/40 px-4 py-2 text-sm font-semibold text-white transition hover:bg-white/10"
+          className="rounded-full border border-black/10 px-4 py-2 text-sm font-semibold text-[var(--foreground)] transition hover:-translate-y-0.5 hover:bg-white"
         >
           Refresh
         </button>

@@ -1,12 +1,16 @@
 @import "tailwindcss";
 
 :root {
-  --background: #f6f2ec;
-  --surface: #ffffff;
-  --muted: #8c7f76;
-  --foreground: #1f1b16;
-  --accent: #f2bf5e;
-  --accent-strong: #e98074;
+  --background: #f8f4ee;
+  --surface: #fffdfa;
+  --panel: #ffffff;
+  --muted: #7b756a;
+  --foreground: #1d1a14;
+  --accent: #8fb8a4;
+  --accent-strong: #d18b79;
+  --accent-deep: #7184c9;
+  --border-soft: rgba(29, 26, 20, 0.08);
+  --shadow-soft: 0 35px 80px rgba(29, 26, 20, 0.08);
 }
 
 @theme inline {
@@ -18,23 +22,28 @@
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #050505;
-    --surface: #18181b;
-    --muted: #a1a1aa;
-    --foreground: #f4f4f5;
-    --accent: #fb923c;
-    --accent-strong: #f87171;
+    --background: #0f1110;
+    --surface: #1a1c1a;
+    --panel: #202221;
+    --muted: #b1b1aa;
+    --foreground: #f2f2ef;
+    --accent: #84c7b9;
+    --accent-strong: #f09482;
+    --accent-deep: #91a7ff;
+    --border-soft: rgba(255, 255, 255, 0.08);
+    --shadow-soft: 0 35px 80px rgba(0, 0, 0, 0.55);
   }
 }
 
 body {
   min-height: 100vh;
-  background: radial-gradient(circle at top, #fff7f0 0%, var(--background) 45%)
-      fixed,
+  background: radial-gradient(circle at top, #ffffff 0%, transparent 40%) fixed,
     var(--background);
   color: var(--foreground);
   font-family: var(--font-geist-sans), -apple-system, BlinkMacSystemFont,
     "Segoe UI", sans-serif;
+  letter-spacing: -0.01em;
+  -webkit-font-smoothing: antialiased;
 }
 
 a {

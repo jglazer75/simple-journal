@@ -306,12 +306,13 @@ server {
 
 ## 10. Phased Development Plan
 
-### Progress Snapshot (Nov 16, 2025)
+### Progress Snapshot (Feb 25, 2026)
 
 - **Phase 0 – Infrastructure & Scaffolding**: ✅ Complete (Next.js app, Docker/Compose, Prisma schema + migrations + seeds wired to Postgres on `ogsdell-network`).
 - **Phase 1 – Passcode Lock**: ✅ Complete (argon2 hashing, JWT cookie with configurable secure flag, passcode UI gate, `/api/auth/*` routes).
-- **Phase 2 – Anger + Gratitude**: ✅ Anger + Gratitude flows persist entries with auto-titled counters; history view lists recent entries and shows anger reasons if the long-form body is empty. Creative + Ollama work still pending.
-- **Phase 3 & 4**: Not started.
+- **Phase 2 – Anger + Gratitude**: ✅ Anger + Gratitude flows persist entries with auto-titled counters; history view lists recent entries and shows anger reasons if the long-form body is empty.
+- **Phase 3 – Creative + Ollama**: ✅ Persona seeds, `/api/prompts/creative`, AI prompt storage, Markdown entry flow, Ollama health indicator, entry detail view with persona/prompt context.
+- **Phase 4 – Polish**: 🟡 In progress (new UI palette, keyboard shortcuts, history/detail readability, PWA manifest, operator tips page). Remaining work: richer Markdown renderer, in-app admin controls (prompt toggles/persona editor), additional responsive/PWA refinements if needed.
 
 ### **Phase 0 – Infrastructure & Scaffolding**
 
@@ -359,3 +360,7 @@ server {
 ---
 
 **End of agents.md**
+
+### Known Issues
+
+- **Entry detail mismatch**: Detail page currently fetches the wrong record; investigate context params on `/entries/[id]` route.
