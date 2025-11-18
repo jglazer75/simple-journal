@@ -1,382 +1,118 @@
-# simple-journal
-Journaling for Gratitude and Creative Writing
-
-# Agents Journal Application Specification
-
-## 1. Product Summary
-
-A minimalist, private, tailnet‑only journaling application running on **PROX-DOCK** using **Next.js**, **PostgreSQL**, **Redis**, **Nginx**, and an **internal Ollama LLM** (Mistral, gpt‑oss, etc.) for creative prompts. The app supports three entry types:
-
-* 🤬 **Anger** – quick‑access guided prompt.
-* 🥰 **Gratitude** – uses one random prompt from a set of 100.
-* ✍️ **Creative** – Markdown long‑form writing using AI‑generated prompts.
-
-Simplicity and speed are prioritized, especially for anger entries. Past entries are viewable chronologically but not searchable. The application includes a **local device passcode lock**.
-
----
-
-## 2. Core Requirements
-
-### 2.1 Functional Requirements
-
-* Tailnet‑accessible web app at e.g. `journal.tailnet.local`.
-* Three entry flows: anger, gratitude, creative.
-* **Auto‑generated entry titles** using entry type emoji + auto‑increment sequence:
-
-  * `🤬 001`, `🤬 002`, ...
-  * `🥰 001`, `🥰 002`, ...
-  * `✍️ 001`, `✍️ 002`, ...
-* Local passcode lock:
-
-  * Simple PIN or passphrase.
-  * Stored hashed in DB.
-  * User session stored in browser cookie; no re‑entry unless cookie expires.
-* Creative prompts generated using **internal Ollama** (Mistral or gpt‑oss models).
-* Markdown support for creative entries.
-* Minimalist UI.
-* Past entries list with pagination.
-* No search needed for v1.
-
-### 2.2 Non‑Functional Requirements
-
-* Tailnet‑restricted. No public access.
-* Light, low‑latency UI.
-* Runs entirely via Docker on PROX‑DOCK.
-* Nginx reverse proxy handles TLS (optional) and routing.
-* PostgreSQL persistence.
-* Redis caching and session management.
-* Secure cookie for authentication.
-
----
-
-## 3. System Architecture
-
-### 3.1 Services
-
-* **journal-web** – Next.js App Router application.
-* **journal-db** – PostgreSQL database.
-* **journal-redis** – Redis for sessions and caching.
-* **ollama** – Internal tailnet-accessible Ollama instance using local models.
-* **nginx-proxy** – Existing PROX‑DOCK Nginx configuration.
-
-### 3.2 Networking
-
-* All containers communicate over internal Docker network: `prox-dock-internal`.
-* Nginx exposes `journal.tailnet.local` → journal-web.
-* Ollama available at e.g. `http://ollama.tailnet.local:11434`.
-* DB and Redis not publicly exposed.
-
----
-
-## 4. Data Model
-
-### 4.1 Users
-
-```
-users (
-  id UUID PK,
-  passcode_hash TEXT,
-  created_at timestamp,
-  updated_at timestamp
-)
-```
-
-**Single user** supported; model is future‑proof.
-
-### 4.2 Auto‑increment counters per entry type
-
-```
-entry_counters (
-  id SERIAL PK,
-  entry_type TEXT UNIQUE,     -- ANGER, GRATITUDE, CREATIVE
-  counter INTEGER
-)
-```
-
-Used for titles (`🤬 001`, etc).
-
-### 4.3 Journal entries
-
-```
-journal_entries (
-  id UUID PK,
-  user_id UUID FK,
-  entry_type TEXT,            -- ANGER / GRATITUDE / CREATIVE
-  title TEXT,                 -- auto-generated using counter
-  body_markdown TEXT,
-  anger_reason TEXT NULL,
-  gratitude_prompt_id UUID NULL,
-  creative_prompt_id UUID NULL,
-  created_at timestamptz,
-  updated_at timestamptz
-)
-```
-
-### 4.4 Gratitude prompts
-
-```
-gratitude_prompts (
-  id UUID PK,
-  prompt_text TEXT,
-  is_active BOOLEAN,
-  created_at timestamptz
-)
-```
-
-Seed 100 prompts.
-
-### 4.5 Creative personas
-
-```
-creative_personas (
-  id UUID PK,
-  name TEXT,
-  description TEXT,
-  is_active BOOLEAN,
-  "order" INTEGER
-)
-```
-
-### 4.6 Creative prompts (AI-generated)
-
-```
-creative_prompts (
-  id UUID PK,
-  personas_used JSONB,
-  prompt_text TEXT,
-  ai_raw JSONB,
-  created_at timestamptz
-)
-```
-
----
-
-## 5. API Design (Next.js App Router)
-
-### 5.1 Authentication
-
-* `POST /api/auth/verify` – validate passcode.
-* `POST /api/auth/set` – set initial passcode if none exists.
-* Cookie contains signed JWT with very long expiration.
-
-### 5.2 Journaling
-
-* `POST /api/entries` – create entry.
-* `GET /api/entries` – paginated list.
-* `GET /api/entries/:id` – view entry.
-
-### 5.3 Prompts
-
-* `GET /api/prompts/gratitude/random`
-* `POST /api/prompts/creative`
-
-  * Calls internal Ollama: `POST /api/generate` or direct `/api/chat`.
-
----
-
-## 6. UI / UX Design
-
-### 6.1 Visual Style
-
-* Minimalist, whitespace-heavy.
-* Soft background tones.
-* System font / Inter.
-* Mobile-first with desktop enhancements.
-
-### 6.2 Navigation
-
-* Top tabs:
-
-  * 🤬 Anger
-  * 🥰 Gratitude
-  * ✍️ Creative
-* Default opens to **Anger**.
-
-### 6.3 Anger Flow
-
-* Always visible field:
-
-  > *“I am angry because I care about [____].”*
-* Large text box below for deeper writing.
-* `Save` button.
-* Keyboard shortcut: `a`.
-* Extremely fast entry creation.
-
-### 6.4 Gratitude Flow
-
-* Random prompt displayed on tab load.
-* "New prompt" button.
-* Text area for reflection.
-* Save generates auto-title (`🥰 00X`).
-
-### 6.5 Creative Flow
-
-* Persona multi-select.
-* "Generate prompt" uses Ollama.
-* Markdown editor.
-* Save→ assigns auto-title (`✍️ 00X`).
-
-### 6.6 History View
-
-* List by date.
-* Shows emoji + title + timestamp.
-* Entry detail modal or page.
-
----
-
-## 7. Internal Ollama Integration
-
-### 7.1 Models
-
-Supported local models:
-
-* `mistral:latest`
-* `gpt-oss:20b`
-* any configured `.gguf` model
-
-### 7.2 Creative prompt generation
-
-POST → `http://ollama.tailnet.local:11434/api/generate`
-
-```json
-{
-  "model": "mistral:latest",
-  "prompt": "You are a creative writing prompt generator ..."
-}
-```
-
-App wraps result into `creative_prompts` rows.
-
----
-
-## 8. Security
-
-* Tailnet access only.
-* Passcode hashed in DB (argon2).
-* Session cookie: httpOnly, secure, signed.
-* No external users.
-* No password reset needed.
-
----
-
-## 9. Deployment on PROX‑DOCK
-
-### 9.1 Environment Variables
-
-```
-DATABASE_URL=postgres://...
-REDIS_URL=redis://...
-OLLAMA_URL=http://ollama.tailnet.local:11434
-JWT_SECRET=...
-SESSION_COOKIE_SECURE=false
-```
-
-### 9.2 Docker Compose (partial)
-
-```yaml
-services:
-  journal-web:
-    build: ./journal-web
-    env_file: .env
-    depends_on:
-      - journal-db
-      - journal-redis
-    networks: [ prox-dock-internal ]
-
-  journal-db:
-    image: postgres:16
-    networks: [ prox-dock-internal ]
-
-  journal-redis:
-    image: redis:7
-    networks: [ prox-dock-internal ]
-```
-
-### 9.3 Nginx routing
-
-```
-server {
-    server_name journal.tailnet.local;
-    location / {
-        proxy_pass http://journal-web:3001;
-    }
-}
-```
-
-### 9.4 Database migrations & seeds
-
-Run Prisma commands from the `journal-web` directory so they can pick up the root `.env` file (which contains Docker hostnames for Postgres/Redis). Prisma itself still expects a local `.env`, so copy the root config after changes:
-
-```bash
-cp .env.example .env   # if needed
-cp .env ../.env
-```
-
-Then from `journal-web/`:
+# Simple Journal
+
+Tailnet-only anger, gratitude, and creative journaling built with Next.js, PostgreSQL, Redis, and an internal Ollama instance. Entries stay private on PROX-DOCK, locked behind a local passcode, and are accessible only from your tailnet.
+
+## Highlights
+
+- Three focused entry flows:
+  - 🤬 **Anger**: one-line guided prompt plus rapid save shortcut.
+  - 🥰 **Gratitude**: pulls from 100 seeded prompts stored in Postgres.
+  - ✍️ **Creative**: persona-driven prompts generated through Ollama with Markdown drafting.
+- Auto-titled entries per type (`🤬 001`, `🥰 042`, etc.), chronological history, and detailed entry view with Markdown rendering.
+- Passcode gate backed by argon2 + long-lived JWT cookie; single-user by design but future-proofed via UUIDs.
+- Docker-first deployment targeting PROX-DOCK with Next.js running behind the existing Nginx proxy.
+
+## Architecture at a Glance
+
+| Component | Purpose |
+| --- | --- |
+| `journal-web` | Next.js App Router UI + API routes. |
+| `journal-db` | PostgreSQL 16 storing users, entries, prompts, personas, counters. |
+| `journal-redis` | Redis 7 for future session caching and prompt health flags. |
+| `ollama` | Tailnet-accessible Ollama instance (e.g., `http://ollama.tailnet.local:11434`). |
+| `nginx-proxy` | Existing PROX-DOCK ingress mapping `journal.tailnet.local` → journal-web. |
+
+All containers share the `ogsdell-network` / `prox-dock-internal` Docker network; Postgres/Redis/Ollama never expose public ports.
+
+## Prerequisites
+
+- Docker 26+ and Docker Compose v2 on PROX-DOCK.
+- Tailnet DNS entry (e.g., `journal.tailnet.local`) pointing at the host running Nginx.
+- Node.js 22+ (only required for local development outside Docker).
+- An Ollama instance reachable from the Docker network with at least one local model (`mistral:latest`, `gpt-oss:20b`, etc.).
+- `.env` file in repo root with service URLs and secrets (see below).
+
+### Environment Variables
+
+Place these in `.env` so both Docker and local scripts inherit them:
+
+| Variable | Description | Example |
+| --- | --- | --- |
+| `DATABASE_URL` | Postgres connection string used by Prisma. | `postgres://journal:secret@journal-db:5432/journal` |
+| `REDIS_URL` | Redis connection URI. | `redis://journal-redis:6379/0` |
+| `OLLAMA_URL` | Base URL for the internal Ollama API. | `http://ollama.tailnet.local:11434` |
+| `OLLAMA_MODEL` | Model ID passed to `POST /api/generate`. | `mistral:latest` |
+| `JWT_SECRET` | Long random string for signing session cookies. | `p5Pj...` |
+| `SESSION_COOKIE_SECURE` (optional) | Override cookie security flag (`true`/`false`). | `true` |
+
+## Quick Start (Docker on PROX-DOCK)
+
+1. Copy `.env.example` (if provided) or craft `.env` with the variables above. Ensure the Postgres and Redis hosts match whatever backing services you already run on `ogsdell-network`.
+2. Install dependencies once: `cd journal-web && npm install`. (This can also be done inside the container via `docker compose run --rm journal-web npm install`.)
+3. Apply migrations + seed data against your Postgres instance:
+   ```bash
+   cd journal-web
+   npm run db:migrate
+   npm run db:seed
+   ```
+   Seeds create the default user, entry counters, 100 gratitude prompts, and 10 creative personas.
+4. Build and launch the app container:
+   ```bash
+   cd ..
+   docker compose build journal-web
+   docker compose up -d journal-web
+   ```
+5. Update Nginx (if needed) so `journal.tailnet.local` proxies to `journal-web:3001`. The existing PROX-DOCK snippet is:
+   ```
+   server {
+       server_name journal.tailnet.local;
+       location / {
+           proxy_pass http://journal-web:3001;
+       }
+   }
+   ```
+6. Visit `https://journal.tailnet.local` from a tailnet client, set your passcode, and begin journaling.
+
+## Local Development
+
+If you’d rather run the app outside Docker (while keeping Postgres/Redis in containers or local services):
 
 ```bash
 cd journal-web
-npm run prisma:generate
-npm run db:migrate
-npm run db:seed
+npm install
+npm run dev # listens on http://localhost:3001
 ```
 
-The `dotenv-cli` helper loads `/home/jglazer/docker/simple-journal/.env` automatically via the `--path ../.env` flag. Update that file before running migrations against another environment.
+Ensure your `.env` (one directory up) points at reachable Postgres/Redis/Ollama endpoints. The dev server hot-reloads UI + API routes as expected.
 
----
+### Useful Scripts
 
-## 10. Phased Development Plan
+| Command | Description |
+| --- | --- |
+| `npm run dev` | Next.js dev server on port 3001. |
+| `npm run build` / `npm run start` | Production build + server (used in Docker image). |
+| `npm run lint` | Runs ESLint with the Next.js config. |
+| `npm run db:migrate` | `prisma migrate deploy` using root `.env`. |
+| `npm run db:seed` | Upserts user/counters/prompts/personas. |
 
-Current implementation status:
+## Application Flow
 
-- **Phase 0 – Infrastructure & Scaffolding:** ✅ Completed (Dockerized Next.js app, Compose + Prisma, migrations + seeds, `.env` workflow).
-- **Phase 1 – Passcode Lock:** ✅ Completed (argon2 hashing, JWT cookie, configurable secure flag, passcode gate UI).
-- **Phase 2 – Anger + Gratitude:** ✅ Anger + Gratitude entry forms persist via `/api/entries`, auto-title counters, history list powered by Prisma (anger reason shown when long-form body empty). Creative + Ollama flow still pending.
-- **Phase 3 – Creative + Ollama / Phase 4 – Polish:** ❌ Not started.
+1. **Unlocking** – `/api/auth/status` checks for a stored passcode and existing session; `/api/auth/set` hashes the passcode via argon2, `/api/auth/verify` signs the session cookie via `jose`.
+2. **Entries** – `/api/entries` powers both creation (auto-title via `entry_counters`) and the paginated history feed; `/entries/[id]` shows detail view.
+3. **Prompts** – `/api/prompts/gratitude/random` samples from active `gratitude_prompts`; `/api/prompts/creative` pulls active personas, calls Ollama (`OLLAMA_URL`/`OLLAMA_MODEL`), and stores the resulting prompt or fallback text.
 
-### **Phase 0 – Infrastructure & Scaffolding**
+## Seeding & Data Changes
 
-* Create Next.js project.
-* Dockerize.
-* Connect Postgres & Redis.
-* Create migrations.
-* Basic Nginx routing.
+- Edit `journal-web/prisma/seed.ts` to tweak gratitude prompts or creative personas.
+- Re-run `npm run db:seed` after edits (safe because the script upserts by `promptText`/`name`).
+- Avoid deleting prompts in Postgres; toggle `is_active=false` when retiring a prompt/persona so historical entries keep their context.
 
-### **Phase 1 – Passcode Lock**
+## Troubleshooting
 
-* Passcode set & verify.
-* Cookie-based sessions.
+- **Ollama offline**: The Creative tab saves a fallback prompt, but you’ll see a “fallback” badge. Verify `OLLAMA_URL` from inside the container: `docker compose exec journal-web curl $OLLAMA_URL/api/version`.
+- **No prompts/personas**: Run the seed script again or confirm the rows exist with `is_active=true`.
+- **Session issues**: Delete the `sj_session` cookie and ensure `JWT_SECRET` stayed consistent between builds.
 
-### **Phase 2 – Anger + Gratitude**
+## Contributing
 
-* Implement both flows.
-* History page.
-* Auto-increment titles.
-
-### **Phase 3 – Creative + Ollama**
-
-* Persona seeds.
-* Prompt generation.
-* Markdown entry flow.
-
-### **Phase 4 – Polish**
-
-* Keyboard shortcuts.
-* Layout refinement.
-* Mobile improvements.
-* Optional: PWA.
-
----
-
-## 11. Future Enhancements (Optional)
-
-* Search.
-* Tagging.
-* Analytics or mood tracking.
-* Multi-user support.
-* Export as PDF/Markdown.
-* Daily email summaries (via tailnet SMTP).
-
----
-
-**End of agents.md**
+This repo targets a single-operator deployment. Keep passcode/auth flows simple, use the Docker image for production, and coordinate any larger architectural shifts (e.g., multi-user support, Redis-backed session store) through AGENTS.md before implementation.

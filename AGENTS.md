@@ -363,4 +363,16 @@ server {
 
 ### Known Issues
 
-- **Entry detail mismatch**: Detail page currently fetches the wrong record; investigate context params on `/entries/[id]` route.
+- **Entry detail mismatch**: `/api/entries/[id]` currently treats `context.params` like a `Promise`, so the API can return the wrong record even though the `/entries/[id]` page expects a direct `{ params }` object. Fix the handler signature and add a regression test so the detail screen always reflects the requested entry.
+
+### Delivery Summary & Final Steps
+
+- Infrastructure already matches the Phase 0 spec: Postgres + Redis containers live on the shared docker network and are wired through `.env`; Redis can remain unused unless we later chase session-performance tuning.
+- Next.js now hits every core requirement (passcode gate, anger/gratitude/creative flows, Ollama-backed prompts, PWA manifest), leaving Phase 4 polish items to wrap before launch.
+- Entry detail bug above is the primary outstanding defect and aligns with the Known Issues list.
+
+**Final tasks for this delivery:**
+1. Fix `/api/entries/[id]` so it destructures `{ params }` synchronously, then add a test to prove the right entry is returned to the detail page.
+2. Replace the handcrafted Markdown renderer in `src/app/entries/[id]/page.tsx` with a richer renderer (lists, links, blockquotes, code blocks) to finish the Phase 4 “richer Markdown renderer” milestone.
+3. Expand the “History snapshot” into a paginated history view so users can browse all past entries, meeting the “Past entries list with pagination” requirement.
+4. After the UX work lands, layer in automated coverage for auth setup, entry creation, and prompt generation to reduce regression risk before declaring Phase 4 complete.
