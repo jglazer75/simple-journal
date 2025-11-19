@@ -156,23 +156,23 @@ export function AdminControls() {
   };
 
   return (
-    <section className="space-y-6 rounded-2xl border border-[var(--border-soft)] bg-[var(--panel)] px-5 py-6 shadow-[var(--shadow-soft)]/2">
+    <section className="space-y-6">
       <div className="space-y-2">
-        <h2 className="text-xl font-semibold text-slate-900">In-app admin controls</h2>
-        <p className="text-sm text-[var(--muted)]">
-          Toggle gratitude prompts and creative personas without touching Postgres. Changes take effect immediately for the next entry.
+        <h2 className="text-xl font-semibold text-[--foreground]">In-App Admin</h2>
+        <p className="text-sm text-[--muted]">
+          Toggle gratitude prompts and creative personas without touching the database.
         </p>
       </div>
 
       <AdminSection
-        title="Gratitude prompts"
+        title="Gratitude Prompts"
         description={`${activePromptCount} active · ${promptState.items.length} total`}
         state={promptState}
         onRefresh={refreshPrompts}
         renderItem={(prompt) => (
           <li
             key={prompt.id}
-            className="flex flex-col gap-2 rounded-xl border border-[var(--border-soft)] bg-[var(--surface)] px-4 py-3 text-sm text-[var(--foreground)] md:flex-row md:items-center md:justify-between"
+            className="flex flex-col gap-2 rounded-lg border border-[--border-soft] bg-[--surface] p-3 text-sm text-[--foreground] md:flex-row md:items-center md:justify-between"
           >
             <p className="md:flex-1">{prompt.text}</p>
             <button
@@ -180,11 +180,11 @@ export function AdminControls() {
               onClick={() => {
                 void togglePrompt(prompt);
               }}
-              className={`rounded-full px-4 py-1.5 text-xs font-semibold ${
+              className={`w-full rounded-md px-3 py-1 text-xs font-semibold md:w-auto ${
                 prompt.isActive
-                  ? "bg-emerald-100 text-emerald-800"
-                  : "bg-slate-200 text-slate-600"
-              } transition hover:-translate-y-0.5`}
+                  ? "bg-[--accent-soft] text-[--accent-strong]"
+                  : "bg-[--panel] text-[--muted]"
+              } transition hover:opacity-80`}
             >
               {prompt.isActive ? "Active" : "Hidden"}
             </button>
@@ -193,30 +193,30 @@ export function AdminControls() {
       />
 
       <AdminSection
-        title="Creative personas"
+        title="Creative Personas"
         description={`${activePersonaCount} active · ${personaState.items.length} total`}
         state={personaState}
         onRefresh={refreshPersonas}
         renderItem={(persona) => (
           <li
             key={persona.id}
-            className="flex flex-col gap-2 rounded-xl border border-[var(--border-soft)] bg-[var(--surface)] px-4 py-3 text-sm text-[var(--foreground)]"
+            className="rounded-lg border border-[--border-soft] bg-[--surface] p-3 text-sm text-[--foreground]"
           >
-            <div className="flex flex-col gap-1 md:flex-row md:items-center md:justify-between">
-              <div>
-                <p className="text-sm font-semibold">{persona.name}</p>
-                <p className="text-xs text-[var(--muted)]">{persona.description}</p>
+            <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
+              <div className="md:flex-1">
+                <p className="font-semibold">{persona.name}</p>
+                <p className="text-xs text-[--muted]">{persona.description}</p>
               </div>
               <button
                 type="button"
                 onClick={() => {
                   void togglePersona(persona);
                 }}
-                className={`rounded-full px-4 py-1.5 text-xs font-semibold ${
+                className={`w-full rounded-md px-3 py-1 text-xs font-semibold md:w-auto ${
                   persona.isActive
-                    ? "bg-indigo-100 text-indigo-800"
-                    : "bg-slate-200 text-slate-600"
-                } transition hover:-translate-y-0.5`}
+                    ? "bg-[--accent-soft] text-[--accent-strong]"
+                    : "bg-[--panel] text-[--muted]"
+                } transition hover:opacity-80`}
               >
                 {persona.isActive ? "Active" : "Hidden"}
               </button>
@@ -244,11 +244,11 @@ function AdminSection<T>({
   renderItem,
 }: AdminSectionProps<T>) {
   return (
-    <div className="space-y-3 rounded-2xl border border-dashed border-[var(--border-soft)] px-4 py-4">
+    <div className="space-y-3 rounded-xl border border-[--border-soft] bg-[--panel] p-4">
       <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
         <div>
-          <p className="text-sm font-semibold text-slate-900">{title}</p>
-          <p className="text-xs uppercase tracking-[0.3em] text-[var(--muted)]">
+          <p className="font-semibold text-[--foreground]">{title}</p>
+          <p className="text-xs font-medium uppercase tracking-wider text-[--muted]">
             {description}
           </p>
         </div>
@@ -257,22 +257,22 @@ function AdminSection<T>({
           onClick={() => {
             void onRefresh();
           }}
-          className="rounded-full border border-[var(--accent)] px-3 py-1.5 text-xs font-semibold text-[var(--accent)] transition hover:-translate-y-0.5 hover:bg-[var(--accent-soft)]"
+          className="self-start rounded-lg border border-[--border-soft] bg-[--surface] px-3 py-1.5 text-xs font-semibold text-[--foreground] transition hover:bg-[--accent-soft]"
         >
           Refresh
         </button>
       </div>
 
       {state.error ? (
-        <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+        <div className="rounded-lg border border-red-200 bg-red-50/50 px-3 py-2 text-sm text-red-700">
           {state.error}
         </div>
       ) : null}
 
       {state.loading ? (
-        <p className="text-sm text-[var(--muted)]">Loading…</p>
+        <p className="text-sm text-[--muted]">Loading…</p>
       ) : state.items.length === 0 ? (
-        <p className="text-sm text-[var(--muted)]">No records found.</p>
+        <p className="text-sm text-[--muted]">No records found.</p>
       ) : (
         <ul className="space-y-2">{state.items.map((item) => renderItem(item))}</ul>
       )}

@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { Flame, Heart, Sparkles } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 type TabId = "anger" | "gratitude" | "creative";
@@ -148,11 +149,11 @@ function StatusBanner({ status }: { status: FormStatus | null }) {
 
   const toneClasses =
     status.tone === "success"
-      ? "border-emerald-200 bg-emerald-50 text-emerald-700"
-      : "border-red-200 bg-red-50 text-red-700";
+      ? "border-green-200 bg-green-50 text-green-800 dark:border-green-600/30 dark:bg-green-500/10 dark:text-green-300"
+      : "border-red-200 bg-red-50 text-red-800 dark:border-red-600/30 dark:bg-red-500/10 dark:text-red-300";
 
   return (
-    <div className={`rounded-2xl border px-4 py-3 text-sm ${toneClasses}`}>
+    <div className={`rounded-lg border px-4 py-3 text-sm font-medium ${toneClasses}`}>
       {status.message}
     </div>
   );
@@ -246,51 +247,52 @@ export default function Home() {
   }
 
   return (
-    <div className="min-h-screen bg-[var(--background)] bg-[radial-gradient(circle_at_top,_rgba(255,255,255,0.85),_transparent_55%)] px-4 py-12 text-[var(--foreground)]">
-      <main className="mx-auto flex w-full max-w-4xl flex-col gap-10 rounded-[40px] border border-[var(--border-soft)] bg-[var(--surface)]/95 px-6 py-10 shadow-[var(--shadow-soft)] sm:px-10">
-        <header className="space-y-3">
-          <p className="text-xs font-semibold uppercase tracking-[0.4em] text-[var(--muted)]">
-            Simple Journal
-          </p>
-          <h1 className="text-3xl font-semibold leading-tight text-[var(--foreground)] md:text-[40px]">
-            Quiet space for anger releases, gratitude notes, and creative sparks.
+    <div className="text-[--foreground] antialiased">
+      <main className="mx-auto flex w-full max-w-4xl flex-col gap-10 p-4 md:p-8">
+        <header className="space-y-2">
+          <h1 className="text-4xl font-bold tracking-tight text-[--foreground] md:text-5xl">
+            A quiet space.
           </h1>
-          <p className="text-base text-[var(--muted)]">
-            Minimal UI, thoughtful typography, and private Ollama prompts keep the focus on you—not the tool.
+          <p className="text-lg text-[--muted]">
+            Choose a journal to begin your session.
           </p>
-          <div>
-            <Link
-              href="/settings"
-              className="inline-flex items-center gap-2 rounded-full border border-[var(--border-soft)] px-4 py-2 text-sm font-semibold text-[var(--foreground)] transition hover:-translate-y-0.5 hover:bg-white"
-            >
-              Setup & Tips
-              <span aria-hidden>→</span>
-            </Link>
-          </div>
         </header>
 
-        <nav className="flex flex-wrap gap-3 rounded-3xl border border-[var(--border-soft)] bg-[var(--panel)]/80 p-2">
-          {TABS.map((tab) => (
-            <button
-              key={tab.id}
-              type="button"
-              onClick={() => setActiveTab(tab.id)}
-              className={`flex min-w-[150px] flex-1 flex-col rounded-2xl border px-4 py-3 text-left transition ${
-                activeTab === tab.id
-                  ? "border-indigo-200 bg-indigo-600 text-white shadow-lg shadow-indigo-600/25"
-                  : "border-transparent text-slate-600 hover:border-slate-200 hover:bg-white hover:text-slate-900"
-              }`}
-            >
-              <span className="text-base font-semibold">{tab.label}</span>
-              <span
-                className={`text-sm md:text-xs ${
-                  activeTab === tab.id ? "text-white/80" : "text-[var(--muted)]"
+        <nav className="flex flex-wrap gap-3 rounded-2xl bg-[--panel] p-2">
+          {TABS.map((tab) => {
+            const isActive = activeTab === tab.id;
+            const activeColor =
+              tab.id === "anger"
+                ? "var(--anger)"
+                : tab.id === "gratitude"
+                  ? "var(--gratitude)"
+                  : "var(--creative)";
+
+            return (
+              <button
+                key={tab.id}
+                type="button"
+                onClick={() => setActiveTab(tab.id)}
+                className={`flex min-w-[150px] flex-1 flex-col rounded-xl border-2 px-4 py-3 text-left transition-all duration-150 ease-in-out ${
+                  isActive
+                    ? "border-transparent text-white"
+                    : "border-transparent text-[--muted] hover:border-[--border-soft] hover:bg-[--surface]"
                 }`}
+                style={{
+                  backgroundColor: isActive ? activeColor : undefined,
+                }}
               >
-                {tab.description}
-              </span>
-            </button>
-          ))}
+                <span className="text-base font-semibold">{tab.label}</span>
+                <span
+                  className={`text-sm ${
+                    isActive ? "text-white/80" : ""
+                  }`}
+                >
+                  {tab.description}
+                </span>
+              </button>
+            );
+          })}
         </nav>
 
         <section>
@@ -362,18 +364,18 @@ function AngerEntry({ onEntrySaved }: EntryFormProps) {
     <form
       ref={formRef}
       onSubmit={handleSubmit}
-      className="space-y-6 rounded-3xl border border-black/5 bg-white/95 p-6 shadow-[0_30px_60px_rgba(23,18,12,0.05)] md:p-8"
+      className="space-y-6 rounded-2xl border border-[--border-soft] bg-[--surface] p-6"
     >
-      <div className="space-y-2">
-        <p className="text-xs font-semibold uppercase tracking-[0.3em] text-[var(--muted)]">
+      <div className="space-y-1">
+        <p className="text-sm font-medium text-[--muted]">
           Guided prompt
         </p>
-        <p className="text-2xl font-medium leading-snug text-slate-900">
+        <p className="text-xl font-semibold text-[--foreground]">
           “I am angry because I care about…”
         </p>
       </div>
       <label className="flex flex-col gap-2">
-        <span className="text-sm font-semibold text-slate-600">
+        <span className="text-sm font-medium text-[--muted]">
           Fill in the blank
         </span>
         <input
@@ -381,30 +383,31 @@ function AngerEntry({ onEntrySaved }: EntryFormProps) {
           value={reason}
           onChange={(event) => setReason(event.target.value)}
           placeholder="my boundaries being ignored"
-          className="rounded-2xl border border-black/10 bg-white px-4 py-3 text-lg font-medium text-slate-900 outline-none transition focus:border-[var(--accent-strong)] focus:ring-2 focus:ring-[var(--accent-strong)]/20"
+          className="rounded-lg border border-[--border-soft] bg-[--background] px-4 py-2 text-base font-medium text-[--foreground] outline-none transition focus:border-[--anger] focus:ring-2 focus:ring-[--anger]/20"
         />
       </label>
       <label className="flex flex-col gap-2">
-        <span className="text-sm font-semibold text-slate-600">
-          Expand the feeling
+        <span className="text-sm font-medium text-[--muted]">
+          Expand the feeling (optional)
         </span>
         <textarea
           value={body}
           onChange={(event) => setBody(event.target.value)}
-          rows={6}
+          rows={5}
           placeholder="Let it all out in the long-form box..."
-          className="rounded-2xl border border-black/10 bg-white px-4 py-3 text-base leading-relaxed text-slate-900 outline-none transition focus:border-[var(--accent-strong)] focus:ring-2 focus:ring-[var(--accent-strong)]/20"
+          className="rounded-lg border border-[--border-soft] bg-[--background] px-4 py-2 text-base leading-relaxed text-[--foreground] outline-none transition focus:border-[--anger] focus:ring-2 focus:ring-[--anger]/20"
         />
       </label>
       <StatusBanner status={status} />
-      <div className="flex flex-col gap-2 text-sm text-slate-500 md:flex-row md:items-center md:justify-between">
-        <p><span className="font-semibold">Ctrl/Cmd + Shift + A</span> saves instantly.</p>
+      <div className="flex flex-col gap-4 text-sm text-[--muted] md:flex-row md:items-center md:justify-between">
+        <p>Shortcut: <span className="font-semibold">Ctrl/Cmd + Shift + A</span></p>
         <button
           type="submit"
           disabled={saving}
-          className="rounded-full bg-rose-500 px-6 py-2 text-sm font-semibold text-white shadow-lg shadow-rose-500/40 transition hover:translate-x-0.5 hover:-translate-y-0.5 hover:shadow-[0_20px_40px_rgba(179,84,66,0.35)] disabled:cursor-not-allowed disabled:opacity-60"
+          style={{ backgroundColor: "var(--anger)" }}
+          className="rounded-lg px-6 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:-translate-y-px disabled:cursor-not-allowed disabled:opacity-60"
         >
-          {saving ? "Saving…" : "Save anger entry"}
+          {saving ? "Saving…" : "Save Anger Entry"}
         </button>
       </div>
     </form>
@@ -491,14 +494,14 @@ function GratitudeEntry({ onEntrySaved }: EntryFormProps) {
     <form
       ref={formRef}
       onSubmit={handleSubmit}
-      className="space-y-6 rounded-3xl border border-black/5 bg-white/95 p-6 shadow-[0_30px_60px_rgba(23,18,12,0.05)] md:p-8"
+      className="space-y-6 rounded-2xl border border-[--border-soft] bg-[--surface] p-6"
     >
-      <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+      <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
         <div className="space-y-1">
-          <p className="text-xs font-semibold uppercase tracking-[0.3em] text-[var(--muted)]">
+          <p className="text-sm font-medium text-[--muted]">
             Random prompt
           </p>
-          <p className="text-2xl font-semibold text-slate-900">
+          <p className="text-xl font-semibold text-[--foreground]">
             {prompt?.text ?? "Fetching something to appreciate…"}
           </p>
         </div>
@@ -508,44 +511,36 @@ function GratitudeEntry({ onEntrySaved }: EntryFormProps) {
             void fetchPrompt();
           }}
           disabled={promptLoading}
-          className="self-start rounded-full border border-black/10 px-4 py-2 text-sm font-semibold text-slate-700 transition hover:border-black/30 hover:bg-white disabled:cursor-not-allowed disabled:opacity-50"
+          className="self-start rounded-lg border border-[--border-soft] bg-[--background] px-4 py-2 text-sm font-semibold text-[--foreground] transition hover:bg-[--accent-soft] disabled:cursor-not-allowed disabled:opacity-50"
         >
-          {promptLoading ? "Loading…" : "New prompt"}
+          {promptLoading ? "Loading…" : "New Prompt"}
         </button>
       </div>
       {promptError ? (
         <p className="text-sm text-red-600">{promptError}</p>
       ) : null}
       <label className="flex flex-col gap-2">
-        <span className="text-sm font-semibold text-slate-600">
-          Reflection
+        <span className="text-sm font-medium text-[--muted]">
+          Your reflection
         </span>
         <textarea
           value={reflection}
           onChange={(event) => setReflection(event.target.value)}
           rows={5}
           placeholder="Jot down a few warm sentences…"
-          className="rounded-2xl border border-black/10 bg-white px-4 py-3 text-base text-slate-900 outline-none transition focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent)]/20"
+          className="rounded-lg border border-[--border-soft] bg-[--background] px-4 py-2 text-base leading-relaxed text-[--foreground] outline-none transition focus:border-[--gratitude] focus:ring-2 focus:ring-[--gratitude]/20"
         />
       </label>
       <StatusBanner status={status} />
-      <div className="flex flex-col gap-3 text-sm text-slate-500 md:flex-row md:items-center md:justify-between">
-        <div>
-          <p>
-            {prompt?.text
-              ? "Prompt pulled straight from Postgres."
-              : "Connect to fetch one of the seeded prompts."}
-          </p>
-          <p>
-            <span className="font-semibold">Ctrl/Cmd + Shift + G</span> saves this entry.
-          </p>
-        </div>
+      <div className="flex flex-col gap-4 text-sm text-[--muted] md:flex-row md:items-center md:justify-between">
+        <p>Shortcut: <span className="font-semibold">Ctrl/Cmd + Shift + G</span></p>
         <button
           type="submit"
           disabled={saving}
-          className="rounded-full bg-emerald-600 px-6 py-2 text-sm font-semibold text-white shadow-lg shadow-emerald-600/40 transition hover:-translate-y-0.5 hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-60"
+          style={{ backgroundColor: "var(--gratitude)" }}
+          className="rounded-lg px-6 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:-translate-y-px disabled:cursor-not-allowed disabled:opacity-60"
         >
-          {saving ? "Saving…" : "Save gratitude entry"}
+          {saving ? "Saving…" : "Save Gratitude Entry"}
         </button>
       </div>
     </form>
@@ -720,11 +715,11 @@ function CreativeEntry({ onEntrySaved }: EntryFormProps) {
     <form
       ref={formRef}
       onSubmit={handleSubmit}
-      className="space-y-6 rounded-3xl border border-black/5 bg-white/95 p-6 shadow-[0_30px_60px_rgba(23,18,12,0.05)] md:p-8"
+      className="space-y-6 rounded-2xl border border-[--border-soft] bg-[--surface] p-6"
     >
       <div className="space-y-3">
         <div className="flex items-center justify-between">
-          <p className="text-xs font-semibold uppercase tracking-[0.3em] text-[var(--muted)]">
+          <p className="text-sm font-medium text-[--muted]">
             Personas
           </p>
           <button
@@ -733,14 +728,14 @@ function CreativeEntry({ onEntrySaved }: EntryFormProps) {
               void loadPersonas();
             }}
             disabled={personasLoading}
-            className="text-xs font-semibold uppercase tracking-[0.2em] text-purple-600 disabled:cursor-not-allowed disabled:opacity-50"
+            className="text-xs font-semibold text-[--accent] disabled:cursor-not-allowed disabled:opacity-50"
           >
-            {personasLoading ? "Refreshing…" : "Refresh list"}
+            {personasLoading ? "Refreshing…" : "Refresh List"}
           </button>
         </div>
         <div className="flex flex-wrap gap-3">
           {personasLoading ? (
-            <p className="text-sm text-slate-500">Loading personas…</p>
+            <p className="text-sm text-[--muted]">Loading personas…</p>
           ) : personas.length === 0 ? (
             <p className="text-sm text-red-600">
               {personasError ??
@@ -754,16 +749,16 @@ function CreativeEntry({ onEntrySaved }: EntryFormProps) {
                   key={persona.id}
                   type="button"
                   onClick={() => togglePersona(persona.id)}
-                  className={`rounded-2xl border px-4 py-3 text-left transition ${
+                  className={`rounded-lg border-2 px-4 py-3 text-left transition-all ${
                     isActive
-                      ? "border-slate-900 bg-slate-900 text-white shadow-lg shadow-slate-900/30"
-                      : "border-black/10 bg-white text-slate-800 hover:border-black/30"
+                      ? "border-[--creative] bg-[--creative]/10"
+                      : "border-[--border-soft] bg-[--background] hover:border-[--border-soft]"
                   }`}
                 >
-                  <span className="block text-base font-semibold">{persona.name}</span>
+                  <span className="block text-base font-semibold text-[--foreground]">{persona.name}</span>
                   <span
                     className={`text-sm ${
-                      isActive ? "text-white/85" : "text-slate-500"
+                      isActive ? "text-[--creative]" : "text-[--muted]"
                     }`}
                   >
                     {persona.description}
@@ -773,33 +768,25 @@ function CreativeEntry({ onEntrySaved }: EntryFormProps) {
             })
           )}
         </div>
-        <p className="text-sm text-slate-500">
-          {personaSummary
-            ? `Mixing: ${personaSummary}`
-            : "Choose at least one persona to shape the AI prompt."}
-        </p>
         {personasError && personas.length > 0 ? (
           <p className="text-sm text-red-600">{personasError}</p>
         ) : null}
       </div>
 
-      <div className="space-y-3 rounded-2xl border border-dashed border-indigo-200 bg-indigo-50 p-4">
-        <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
+      <div className="space-y-3 rounded-xl border-2 border-dashed border-[--creative]/30 bg-[--creative]/5 p-4">
+        <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
           <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.3em] text-indigo-700">
-              AI prompt
+            <p className="text-sm font-semibold text-[--creative]">
+              AI Prompt
             </p>
-            <p className="text-sm text-indigo-700">
-              Internal Ollama (mistral / gpt-oss) blends the selected personas into one idea.
-            </p>
-            <p className="mt-1 inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.2em] text-indigo-700">
+            <p className="mt-1 inline-flex items-center gap-2 text-xs font-medium text-[--muted]">
               <span
                 className={`inline-flex h-2.5 w-2.5 rounded-full ${
                   ollamaStatus === "online"
-                    ? "bg-emerald-500 shadow-[0_0_6px_rgba(16,185,129,0.9)]"
+                    ? "bg-green-500"
                     : ollamaStatus === "offline"
-                      ? "bg-red-500 shadow-[0_0_6px_rgba(239,68,68,0.7)]"
-                      : "bg-yellow-400 shadow-[0_0_6px_rgba(250,204,21,0.7)]"
+                      ? "bg-red-500"
+                      : "bg-yellow-400"
                 }`}
                 aria-hidden
               />
@@ -816,25 +803,19 @@ function CreativeEntry({ onEntrySaved }: EntryFormProps) {
               void generatePrompt();
             }}
             disabled={promptLoading || personas.length === 0}
-            className={`self-start rounded-full px-4 py-2 text-sm font-semibold text-white shadow-lg transition hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-60 ${
-              ollamaStatus === "online"
-                ? "bg-emerald-600 shadow-emerald-600/40 hover:bg-emerald-700"
-                : ollamaStatus === "offline"
-                  ? "bg-rose-500 shadow-rose-500/40 hover:bg-rose-600"
-                  : "bg-indigo-600 shadow-indigo-600/40 hover:bg-indigo-700"
-            }`}
+            className="self-start rounded-lg bg-[--creative] px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:-translate-y-px disabled:cursor-not-allowed disabled:opacity-60"
           >
-            {promptLoading ? "Generating…" : "Generate prompt"}
+            {promptLoading ? "Generating…" : "Generate Prompt"}
           </button>
         </div>
-        <div className="rounded-2xl border border-indigo-100 bg-white px-4 py-3 text-sm text-indigo-800">
+        <div className="rounded-lg border border-[--creative]/20 bg-[--surface] px-4 py-3 text-sm text-[--foreground]">
           <p className="whitespace-pre-line">
             {promptState?.text ??
               "Tap “Generate prompt” to ask the internal Ollama instance for a tailored idea."}
           </p>
         </div>
         {promptNotice ? (
-          <p className="text-xs uppercase tracking-[0.2em] text-purple-600">
+          <p className="text-xs font-medium text-[--creative]">
             {promptNotice}
           </p>
         ) : null}
@@ -844,32 +825,27 @@ function CreativeEntry({ onEntrySaved }: EntryFormProps) {
       </div>
 
       <label className="flex flex-col gap-2">
-        <span className="text-sm font-semibold text-slate-600">
-          Markdown entry
+        <span className="text-sm font-medium text-[--muted]">
+          Markdown Entry
         </span>
         <textarea
           value={body}
           onChange={(event) => setBody(event.target.value)}
           rows={8}
-          placeholder="Use Markdown (### headings, **bold**, lists) to expand the prompt into something personal."
-          className="rounded-2xl border border-black/10 bg-white px-4 py-3 font-mono text-base leading-relaxed text-slate-900 outline-none transition focus:border-purple-400 focus:ring-2 focus:ring-purple-200"
+          placeholder="Use Markdown (### headings, **bold**, lists) to expand on the prompt."
+          className="rounded-lg border border-[--border-soft] bg-[--background] px-4 py-2 font-mono text-sm leading-relaxed text-[--foreground] outline-none transition focus:border-[--creative] focus:ring-2 focus:ring-[--creative]/20"
         />
-        <span className="text-xs text-slate-500">
-          Markdown stored verbatim: italics, lists, and checkboxes are all kept.
-        </span>
       </label>
       <StatusBanner status={status} />
-      <div className="flex flex-col gap-3 text-sm text-slate-500 md:flex-row md:items-center md:justify-between">
-        <p>
-          Prompt + entry save together. Press
-          <span className="font-semibold"> Ctrl/Cmd + Shift + C</span> anytime.
-        </p>
+      <div className="flex flex-col gap-4 text-sm text-[--muted] md:flex-row md:items-center md:justify-between">
+        <p>Shortcut: <span className="font-semibold">Ctrl/Cmd + Shift + C</span></p>
         <button
           type="submit"
           disabled={saving}
-          className="rounded-full bg-indigo-700 px-6 py-2 text-sm font-semibold text-white shadow-lg shadow-indigo-700/40 transition hover:-translate-y-0.5 hover:bg-indigo-800 disabled:cursor-not-allowed disabled:opacity-60"
+          style={{ backgroundColor: "var(--creative)" }}
+          className="rounded-lg px-6 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:-translate-y-px disabled:cursor-not-allowed disabled:opacity-60"
         >
-          {saving ? "Saving…" : "Save creative entry"}
+          {saving ? "Saving…" : "Save Creative Entry"}
         </button>
       </div>
     </form>
@@ -951,60 +927,49 @@ export function HistoryPreview({ refreshKey }: HistoryPreviewProps) {
   let content: React.ReactNode;
   if (loading) {
     content = (
-      <p className="text-sm text-[var(--muted)]">Loading your journal history…</p>
+      <p className="text-sm text-[--muted]">Loading your journal history…</p>
     );
   } else if (error) {
     content = (
-      <div className="rounded-2xl border border-red-100 bg-red-50 px-4 py-3 text-sm text-red-700">
+      <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium text-red-800">
         {error}
       </div>
     );
   } else if (entries.length === 0) {
     content = (
-      <p className="text-sm text-[var(--muted)]">
-        Entries you save will appear here. Start with a quick anger release.
+      <p className="text-sm text-[--muted]">
+        Entries you save will appear here.
       </p>
     );
   } else {
     content = (
-      <ul className="space-y-4">
+      <ul className="space-y-3">
         {entries.map((entry) => {
           const emoji = ENTRY_EMOJI_BY_TYPE[entry.entryType] ?? "📝";
           const trimmed = entry.bodyMarkdown?.trim() ?? "";
           let snippet: string;
           if (trimmed.length > 0) {
-            snippet = trimmed.length > 160 ? `${trimmed.slice(0, 160)}…` : trimmed;
+            snippet = trimmed.length > 120 ? `${trimmed.slice(0, 120)}…` : trimmed;
           } else if (entry.entryType === "ANGER" && entry.angerReason) {
             snippet = entry.angerReason;
-          } else if (
-            entry.entryType === "GRATITUDE" &&
-            entry.gratitudePrompt?.promptText
-          ) {
-            snippet = entry.gratitudePrompt.promptText;
-          } else if (
-            entry.entryType === "CREATIVE" &&
-            entry.creativePrompt?.promptText
-          ) {
-            snippet = entry.creativePrompt.promptText;
           } else {
-            snippet = "—";
+            snippet = "No additional text.";
           }
           return (
             <li key={entry.id}>
               <Link
                 href={`/entries/${entry.id}`}
-                className="group flex flex-col gap-2 rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-700 transition hover:-translate-y-0.5 hover:border-slate-300 md:flex-row md:items-center md:justify-between"
+                className="group block rounded-lg border border-[--border-soft] bg-[--background] p-4 transition-colors hover:bg-[--accent-soft]"
               >
-                <div className="text-base font-semibold text-slate-900">
-                  {emoji} {entry.title}
-                </div>
-                <p className="text-sm text-slate-600 md:flex-1 md:px-4">{snippet}</p>
-                <div className="flex items-center gap-3 text-xs font-semibold text-indigo-600">
-                  <span className="uppercase tracking-wide text-slate-500">
+                <div className="flex items-center justify-between">
+                  <span className="font-semibold text-[--foreground]">
+                    {emoji} {entry.title}
+                  </span>
+                  <span className="text-xs font-medium text-[--muted]">
                     {formatEntryTimestamp(entry.createdAt)}
                   </span>
-                  <span className="text-indigo-600 group-hover:text-indigo-800">Open →</span>
                 </div>
+                <p className="mt-2 text-sm text-[--muted]">{snippet}</p>
               </Link>
             </li>
           );
@@ -1017,67 +982,45 @@ export function HistoryPreview({ refreshKey }: HistoryPreviewProps) {
   const canGoNext = currentPage < totalPages && !loading;
 
   return (
-    <section className="rounded-3xl border border-black/5 bg-white/95 p-6 shadow-[0_30px_60px_rgba(23,18,12,0.05)] md:p-8">
-      <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
+    <section className="space-y-6 rounded-2xl border border-[--border-soft] bg-[--surface] p-6">
+      <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <div>
-          <p className="text-xs font-semibold uppercase tracking-[0.3em] text-[var(--muted)]">
-            Journal history
-          </p>
-          <h2 className="text-2xl font-semibold text-[var(--foreground)]">
-            Your full archive
+          <h2 className="text-2xl font-bold text-[--foreground]">
+            Recent Entries
           </h2>
-          <p className="text-sm text-[var(--muted)]">
-            Browse every entry with simple pagination.
+          <p className="text-sm text-[--muted]">
+            {totalEntries > 0
+              ? `Showing ${pageStart}–${pageEnd} of ${totalEntries}`
+              : "No entries yet"}
           </p>
         </div>
-        <div className="flex flex-wrap items-center gap-2 text-xs font-semibold text-[var(--muted)]">
+        <div className="flex flex-wrap items-center gap-2">
           <button
             type="button"
-            onClick={() => {
-              setCurrentPage((page) => Math.max(1, page - 1));
-            }}
+            onClick={() => setCurrentPage((page) => Math.max(1, page - 1))}
             disabled={!canGoPrev}
-            className="rounded-full border border-indigo-500 px-3 py-1.5 text-xs font-semibold text-indigo-900 transition hover:-translate-y-0.5 hover:bg-indigo-50 disabled:cursor-not-allowed disabled:border-slate-300 disabled:text-slate-400"
+            className="rounded-lg border border-[--border-soft] bg-[--background] px-3 py-1.5 text-sm font-semibold text-[--foreground] transition hover:bg-[--accent-soft] disabled:cursor-not-allowed disabled:opacity-50"
           >
-            ← Previous
+            ← Prev
           </button>
           <button
             type="button"
-            onClick={() => {
-              setCurrentPage((page) => page + 1);
-            }}
+            onClick={() => setCurrentPage((page) => page + 1)}
             disabled={!canGoNext}
-            className="rounded-full border border-indigo-500 px-3 py-1.5 text-xs font-semibold text-indigo-900 transition hover:-translate-y-0.5 hover:bg-indigo-50 disabled:cursor-not-allowed disabled:border-slate-300 disabled:text-slate-400"
+            className="rounded-lg border border-[--border-soft] bg-[--background] px-3 py-1.5 text-sm font-semibold text-[--foreground] transition hover:bg-[--accent-soft] disabled:cursor-not-allowed disabled:opacity-50"
           >
             Next →
           </button>
-          <button
-            type="button"
-            onClick={() => {
-              void fetchHistory(currentPage);
-            }}
-            disabled={loading}
-            className="rounded-full border border-indigo-500 px-3 py-1.5 text-xs font-semibold text-indigo-900 transition hover:-translate-y-0.5 hover:bg-indigo-50 disabled:cursor-not-allowed disabled:border-slate-300 disabled:text-slate-400"
-          >
-            Refresh
-          </button>
           <Link
             href="/entries"
-            className="rounded-full border border-indigo-500 px-3 py-1.5 text-xs font-semibold text-indigo-900 transition hover:-translate-y-0.5 hover:bg-indigo-50"
+            className="rounded-lg border border-[--border-soft] bg-[--background] px-3 py-1.5 text-sm font-semibold text-[--foreground] transition hover:bg-[--accent-soft]"
           >
-            Full archive →
+            View All
           </Link>
         </div>
       </div>
 
-      <div className="mt-6 space-y-4">
-        <div className="text-xs uppercase tracking-[0.3em] text-[var(--muted)]">
-          {totalEntries > 0
-            ? `Showing ${pageStart}–${pageEnd} of ${totalEntries} entries · Page ${currentPage} of ${totalPages}`
-            : "No entries saved yet"}
-        </div>
-        {content}
-      </div>
+      {content}
     </section>
   );
 }
@@ -1158,70 +1101,61 @@ export function PasscodeGate({
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-[var(--background)] px-4 py-10">
+    <div className="flex min-h-screen items-center justify-center bg-[var(--background)] p-4">
       <form
         onSubmit={handleSubmit}
-        className="w-full max-w-md space-y-6 rounded-[32px] border border-black/10 bg-white/95 px-8 py-10 text-slate-900 shadow-2xl shadow-[var(--foreground)]/5"
+        className="w-full max-w-sm space-y-6 rounded-2xl border border-[--border-soft] bg-[--surface] p-8 shadow-lg"
       >
-        <div className="space-y-2">
-          <p className="text-xs font-semibold uppercase tracking-[0.4em] text-[var(--muted)]">
-            {hasPasscode ? "Enter passcode" : "Set a passcode"}
-          </p>
-          <h1 className="text-3xl font-semibold">
+        <div className="space-y-1 text-center">
+          <h1 className="text-2xl font-bold text-[--foreground]">
             {hasPasscode
               ? "Unlock Simple Journal"
-              : "Secure your journal before writing"}
+              : "Secure Your Journal"}
           </h1>
-          <p className="text-sm text-slate-600">
+          <p className="text-sm text-[--muted]">
             {hasPasscode
-              ? "Your entries stay local to this device. Enter your secret to continue."
-              : "Create a simple PIN or phrase. It never leaves your Postgres instance."}
+              ? "Enter your passcode to continue."
+              : "Create a passcode to keep your entries private."}
           </p>
         </div>
 
         {statusError ? (
-          <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
-            {statusError}
-          </div>
+          <StatusBanner status={{ tone: "error", message: statusError }} />
         ) : null}
 
         {error ? (
-          <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
-            {error}
-          </div>
+          <StatusBanner status={{ tone: "error", message: error }} />
         ) : null}
 
         {successMessage ? (
-          <div className="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">
-            {successMessage}
-          </div>
+          <StatusBanner status={{ tone: "success", message: successMessage }} />
         ) : null}
 
         <div className="space-y-4">
-          <label className="flex flex-col gap-2">
-            <span className="text-sm font-semibold text-slate-600">
-              {hasPasscode ? "Passcode" : "Create passcode"}
+          <label className="flex flex-col gap-1.5">
+            <span className="text-sm font-medium text-[--muted]">
+              {hasPasscode ? "Passcode" : "Create Passcode"}
             </span>
             <input
               type="password"
               value={passcode}
               autoFocus
               onChange={(event) => setPasscode(event.target.value)}
-              className="rounded-2xl border border-black/10 bg-white px-4 py-3 text-base font-medium text-slate-900 outline-none transition focus:border-[var(--accent-strong)] focus:ring-2 focus:ring-[var(--accent-strong)]/20"
+              className="rounded-lg border border-[--border-soft] bg-[--background] px-4 py-2 text-base text-[--foreground] outline-none transition focus:border-[--accent] focus:ring-2 focus:ring-[--accent]/20"
               placeholder={hasPasscode ? "Enter your passcode" : "Choose a secret phrase"}
             />
           </label>
 
           {!hasPasscode ? (
-            <label className="flex flex-col gap-2">
-              <span className="text-sm font-semibold text-slate-600">
-                Confirm passcode
+            <label className="flex flex-col gap-1.5">
+              <span className="text-sm font-medium text-[--muted]">
+                Confirm Passcode
               </span>
               <input
                 type="password"
                 value={confirmPasscode}
                 onChange={(event) => setConfirmPasscode(event.target.value)}
-                className="rounded-2xl border border-black/10 bg-white px-4 py-3 text-base font-medium text-slate-900 outline-none transition focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent)]/20"
+                className="rounded-lg border border-[--border-soft] bg-[--background] px-4 py-2 text-base text-[--foreground] outline-none transition focus:border-[--accent] focus:ring-2 focus:ring-[--accent]/20"
                 placeholder="Enter again to confirm"
               />
             </label>
@@ -1231,13 +1165,13 @@ export function PasscodeGate({
         <button
           type="submit"
           disabled={submitting}
-          className="w-full rounded-full bg-indigo-700 px-4 py-3 text-base font-semibold text-white shadow-lg shadow-indigo-900/30 transition hover:bg-indigo-800 disabled:cursor-not-allowed disabled:opacity-50"
+          className="w-full rounded-lg bg-[--accent] px-4 py-2.5 text-base font-semibold text-white shadow-sm transition hover:bg-[--accent-strong] disabled:cursor-not-allowed disabled:opacity-50"
         >
           {submitting
             ? "Working..."
             : hasPasscode
-              ? "Unlock journal"
-              : "Save passcode"}
+              ? "Unlock Journal"
+              : "Save Passcode"}
         </button>
       </form>
     </div>
