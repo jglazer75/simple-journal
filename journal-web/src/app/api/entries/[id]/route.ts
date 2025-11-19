@@ -14,18 +14,15 @@ export async function GET(_: NextRequest, context: RouteContext) {
 
   const { id } = await context.params;
 
-  const entry = await prisma.journalEntry.findFirst({
-    where: {
-      id,
-      userId,
-    },
+  const entry = await prisma.journalEntry.findUnique({
+    where: { id },
     include: {
       gratitudePrompt: true,
       creativePrompt: true,
     },
   });
 
-  if (!entry) {
+  if (!entry || entry.userId !== userId) {
     return NextResponse.json({ error: "Entry not found." }, { status: 404 });
   }
 

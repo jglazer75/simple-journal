@@ -2,15 +2,17 @@
 
 import type { ReactNode } from "react";
 import { EntryType } from "@prisma/client";
+import ReactMarkdown, { type Components } from "react-markdown";
+import remarkGfm from "remark-gfm";
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { getSessionUserId } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 
 type EntryDetailPageProps = {
-  params: {
+  params: Promise<{
     id: string;
-  };
+  }>;
 };
 
 const DETAIL_FORMATTER = new Intl.DateTimeFormat(undefined, {
@@ -19,13 +21,14 @@ const DETAIL_FORMATTER = new Intl.DateTimeFormat(undefined, {
 });
 
 export default async function EntryDetailPage({ params }: EntryDetailPageProps) {
+  const { id } = await params;
   const userId = await getSessionUserId();
   if (!userId) {
     redirect("/");
   }
 
   const entry = await prisma.journalEntry.findFirst({
-    where: { id: params.id, userId },
+    where: { id, userId },
     include: {
       gratitudePrompt: true,
       creativePrompt: true,
@@ -39,12 +42,12 @@ export default async function EntryDetailPage({ params }: EntryDetailPageProps) 
   const personaList = extractPersonas(entry.creativePrompt?.personasUsed);
 
   return (
-    <div className="min-h-screen bg-[var(--background)] px-4 py-10 text-[var(--foreground)]">
+    <div className="min-h-screen bg-[var(--background)] bg-[radial-gradient(circle_at_top,_rgba(255,255,255,0.85),_transparent_55%)] px-4 py-10 text-[var(--foreground)]">
       <main className="mx-auto flex w-full max-w-3xl flex-col gap-8 rounded-[32px] border border-[var(--border-soft)] bg-[var(--surface)] px-6 py-8 shadow-[var(--shadow-soft)] md:px-10 md:py-12">
         <div className="flex items-center justify-between">
           <Link
             href="/"
-            className="text-sm font-semibold text-[#4b5a7a] transition hover:-translate-y-0.5"
+            className="text-sm font-semibold text-indigo-600 transition hover:-translate-y-0.5"
           >
             ← Back to journal
           </Link>
@@ -76,17 +79,17 @@ export default async function EntryDetailPage({ params }: EntryDetailPageProps) 
         ) : null}
 
         {entry.entryType === EntryType.CREATIVE && entry.creativePrompt ? (
-          <div className="space-y-3 rounded-2xl border border-[#d9e3ff] bg-white px-5 py-4">
-            <p className="text-xs font-semibold uppercase tracking-[0.3em] text-[#5360a7]">
+          <div className="space-y-3 rounded-2xl border border-indigo-100 bg-white px-5 py-4">
+            <p className="text-xs font-semibold uppercase tracking-[0.3em] text-indigo-700">
               Creative prompt
             </p>
-            <p className="text-sm text-[#2b3050]">{entry.creativePrompt.promptText}</p>
+            <p className="text-sm text-slate-800">{entry.creativePrompt.promptText}</p>
             {personaList.length > 0 ? (
               <div className="flex flex-wrap gap-2">
                 {personaList.map((persona) => (
                   <span
                     key={`${persona.id ?? persona.name}`}
-                    className="rounded-full bg-[#eef2fe] px-3 py-1 text-xs font-semibold text-[#4b5a7a]"
+                    className="rounded-full bg-indigo-50 px-3 py-1 text-xs font-semibold text-indigo-700"
                   >
                     {persona.name}
                   </span>
@@ -96,7 +99,7 @@ export default async function EntryDetailPage({ params }: EntryDetailPageProps) 
           </div>
         ) : null}
 
-        <section className="space-y-4 rounded-[28px] border border-black/10 bg-white px-5 py-6 text-[#2a2520]">
+        <section className="space-y-4 rounded-[28px] border border-slate-200 bg-white px-5 py-6 text-slate-800 shadow-[0_20px_50px_rgba(41,28,21,0.06)]">
           <p className="text-xs font-semibold uppercase tracking-[0.3em] text-[var(--muted)]">
             Entry body
           </p>
@@ -143,11 +146,11 @@ function extractPersonas(data: unknown) {
 
 function Callout({ title, children }: { title: string; children: ReactNode }) {
   return (
-    <div className="rounded-2xl border border-[#dad2c6] bg-[#fefbf6] px-5 py-4">
-      <p className="text-xs font-semibold uppercase tracking-[0.3em] text-[var(--muted)]">
+    <div className="rounded-2xl border border-amber-200 bg-orange-50 px-5 py-4 shadow-[0_15px_35px_rgba(62,34,21,0.08)]">
+      <p className="text-xs font-semibold uppercase tracking-[0.3em] text-amber-800">
         {title}
       </p>
-      <p className="mt-2 text-base leading-relaxed text-[var(--foreground)]">{children}</p>
+      <p className="mt-2 text-base leading-relaxed text-slate-800">{children}</p>
     </div>
   );
 }
@@ -156,127 +159,98 @@ type MarkdownViewProps = {
   content: string;
 };
 
-function MarkdownView({ content }: MarkdownViewProps) {
-  const nodes = parseMarkdown(content);
-  return (
-    <div className="space-y-4 text-[var(--foreground)]">
-      {nodes.length > 0 ? nodes : <p className="text-[var(--muted)]">—</p>}
-    </div>
-  );
-}
-
-function parseMarkdown(content: string) {
-  const lines = content.split(/\r?\n/);
-  const blocks: ReactNode[] = [];
-  let listItems: ReactNode[] = [];
-  let keyCount = 0;
-
-  const flushList = () => {
-    if (listItems.length > 0) {
-      blocks.push(
-        <ul key={`list-${keyCount++}`} className="list-disc pl-5 text-base leading-relaxed">
-          {listItems}
-        </ul>,
-      );
-      listItems = [];
-    }
-  };
-
-  for (const line of lines) {
-    const trimmed = line.trimEnd();
-    if (!trimmed) {
-      flushList();
-      continue;
-    }
-
-    if (trimmed.startsWith("### ")) {
-      flushList();
-      blocks.push(
-        <h3 key={`h3-${keyCount++}`} className="text-lg font-semibold">
-          {formatInline(trimmed.slice(4).trim())}
-        </h3>,
-      );
-      continue;
-    }
-
-    if (trimmed.startsWith("## ")) {
-      flushList();
-      blocks.push(
-        <h2 key={`h2-${keyCount++}`} className="text-xl font-semibold">
-          {formatInline(trimmed.slice(3).trim())}
-        </h2>,
-      );
-      continue;
-    }
-
-    if (trimmed.startsWith("# ")) {
-      flushList();
-      blocks.push(
-        <h1 key={`h1-${keyCount++}`} className="text-2xl font-semibold">
-          {formatInline(trimmed.slice(2).trim())}
-        </h1>,
-      );
-      continue;
-    }
-
-    if (/^[-*]\s+/.test(trimmed)) {
-      const itemContent = trimmed.replace(/^[-*]\s+/, "");
-      listItems.push(
-        <li key={`li-${keyCount++}`} className="leading-relaxed">
-          {formatInline(itemContent)}
-        </li>,
-      );
-      continue;
-    }
-
-    flushList();
-    blocks.push(
-      <p key={`p-${keyCount++}`} className="leading-relaxed">
-        {formatInline(trimmed)}
-      </p>,
+const CodeBlock = ({
+  inline,
+  children,
+  ...props
+}: {
+  inline?: boolean;
+  className?: string;
+  children?: ReactNode;
+}) => {
+  if (inline) {
+    return (
+      <code
+        className="rounded bg-black/5 px-1.5 py-0.5 font-mono text-xs text-[var(--foreground)]"
+        {...props}
+      >
+        {children}
+      </code>
     );
   }
+  return (
+    <pre className="overflow-x-auto rounded-2xl bg-slate-900 px-4 py-3">
+      <code className="block font-mono text-sm leading-relaxed text-white" {...props}>
+        {children}
+      </code>
+    </pre>
+  );
+};
 
-  flushList();
-  return blocks;
-}
+const MARKDOWN_COMPONENTS: Components = {
+  h1: ({ ...props }) => (
+    <h1 className="text-3xl font-semibold leading-tight text-slate-900" {...props} />
+  ),
+  h2: ({ ...props }) => (
+    <h2 className="text-2xl font-semibold leading-tight text-slate-900" {...props} />
+  ),
+  h3: ({ ...props }) => (
+    <h3 className="text-xl font-semibold text-slate-800" {...props} />
+  ),
+  p: ({ ...props }) => (
+    <p className="leading-relaxed text-slate-800" {...props} />
+  ),
+  a: ({ ...props }) => (
+    <a
+      className="font-semibold text-indigo-600 underline decoration-dotted underline-offset-4 transition hover:text-indigo-800"
+      target="_blank"
+      rel="noreferrer"
+      {...props}
+    />
+  ),
+  blockquote: ({ ...props }) => (
+    <blockquote
+      className="rounded-2xl border-l-4 border-indigo-200 bg-indigo-50 px-4 py-3 text-base italic text-slate-700"
+      {...props}
+    />
+  ),
+  ul: ({ ...props }) => (
+    <ul className="list-disc space-y-2 pl-6 text-base leading-relaxed text-slate-800" {...props} />
+  ),
+  ol: ({ ...props }) => (
+    <ol
+      className="list-decimal space-y-2 pl-6 text-base leading-relaxed text-slate-800"
+      {...props}
+    />
+  ),
+  li: ({ ...props }) => <li className="leading-relaxed text-slate-800" {...props} />,
+  code: CodeBlock,
+  hr: () => <hr className="border-t border-dashed border-slate-200" />,
+  table: ({ ...props }) => (
+    <div className="overflow-x-auto rounded-2xl border border-[var(--border-soft)]">
+      <table className="w-full text-left text-sm" {...props} />
+    </div>
+  ),
+  thead: ({ ...props }) => (
+    <thead className="bg-[var(--background)] text-xs uppercase tracking-wide" {...props} />
+  ),
+  th: ({ ...props }) => (
+    <th className="px-3 py-2 font-semibold text-slate-800" {...props} />
+  ),
+  td: ({ ...props }) => (
+    <td className="px-3 py-2 text-slate-800" {...props} />
+  ),
+};
 
-function formatInline(text: string) {
-  const nodes: ReactNode[] = [];
-  const pattern = /(\*\*[^*]+\*\*|__[^_]+__|_[^_]+_|`[^`]+`|\*[^*]+\*)/g;
-  let lastIndex = 0;
-  let match: RegExpExecArray | null;
-  let key = 0;
-
-  while ((match = pattern.exec(text)) !== null) {
-    if (match.index > lastIndex) {
-      nodes.push(text.slice(lastIndex, match.index));
-    }
-    const token = match[0];
-    if (token.startsWith("**") || token.startsWith("__")) {
-      nodes.push(
-        <strong key={`bold-${key++}`}>{token.slice(2, token.length - 2)}</strong>,
-      );
-    } else if (token.startsWith("_") || token.startsWith("*")) {
-      nodes.push(<em key={`italic-${key++}`}>{token.slice(1, token.length - 1)}</em>);
-    } else if (token.startsWith("`")) {
-      nodes.push(
-        <code
-          key={`code-${key++}`}
-          className="rounded bg-black/5 px-1 py-0.5 font-mono text-xs text-[var(--foreground)]"
-        >
-          {token.slice(1, token.length - 1)}
-        </code>,
-      );
-    } else {
-      nodes.push(token);
-    }
-    lastIndex = match.index + token.length;
-  }
-
-  if (lastIndex < text.length) {
-    nodes.push(text.slice(lastIndex));
-  }
-
-  return nodes;
+function MarkdownView({ content }: MarkdownViewProps) {
+  return (
+    <div className="space-y-4 text-slate-800">
+      <ReactMarkdown
+        remarkPlugins={[remarkGfm]}
+        components={MARKDOWN_COMPONENTS}
+      >
+        {content}
+      </ReactMarkdown>
+    </div>
+  );
 }

@@ -5,7 +5,7 @@ Journaling for Gratitude and Creative Writing
 
 ## 1. Product Summary
 
-A minimalist, private, tailnet‑only journaling application running on **PROX-DOCK** using **Next.js**, **PostgreSQL**, **Redis**, **Nginx**, and an **internal Ollama LLM** (Mistral, gpt‑oss, etc.) for creative prompts. The app supports three entry types:
+A minimalist, private, tailnet‑only journaling application running on a Dockerized host using **Next.js**, **PostgreSQL**, **Redis**, **Nginx**, and an **internal Ollama LLM** (Mistral, gpt‑oss, etc.) for creative prompts. The app supports three entry types:
 
 * 🤬 **Anger** – quick‑access guided prompt.
 * 🥰 **Gratitude** – uses one random prompt from a set of 100.
@@ -41,7 +41,7 @@ Simplicity and speed are prioritized, especially for anger entries. Past entries
 
 * Tailnet‑restricted. No public access.
 * Light, low‑latency UI.
-* Runs entirely via Docker on PROX‑DOCK.
+* Runs entirely via Docker on the operator’s host.
 * Nginx reverse proxy handles TLS (optional) and routing.
 * PostgreSQL persistence.
 * Redis caching and session management.
@@ -57,7 +57,7 @@ Simplicity and speed are prioritized, especially for anger entries. Past entries
 * **journal-db** – PostgreSQL database.
 * **journal-redis** – Redis for sessions and caching.
 * **ollama** – Internal tailnet-accessible Ollama instance using local models.
-* **nginx-proxy** – Existing PROX‑DOCK Nginx configuration.
+* **nginx-proxy** – Existing host Nginx configuration.
 
 ### 3.2 Networking
 
@@ -361,18 +361,23 @@ server {
 
 **End of agents.md**
 
-### Known Issues
+### Progress Snapshot (Apr 29, 2026)
 
-- **Entry detail mismatch**: `/api/entries/[id]` currently treats `context.params` like a `Promise`, so the API can return the wrong record even though the `/entries/[id]` page expects a direct `{ params }` object. Fix the handler signature and add a regression test so the detail screen always reflects the requested entry.
+- **Phase 0 – Infrastructure & Scaffolding**: ✅ Complete (Next.js app, Docker/Compose, Prisma schema + migrations + seeds wired to Postgres on `ogsdell-network`).
+- **Phase 1 – Passcode Lock**: ✅ Complete (argon2 hashing, JWT cookie with configurable secure flag, passcode UI gate, `/api/auth/*` routes).
+- **Phase 2 – Anger + Gratitude**: ✅ Flows persist entries with auto-titled counters; history view lists recent entries and shows anger reasons if the body is empty.
+- **Phase 3 – Creative + Ollama**: ✅ Persona seeds, `/api/prompts/creative`, AI prompt storage, Markdown entry flow, Ollama health indicator, entry detail view with persona/prompt context.
+- **Phase 4 – Polish**: ✅ In-app admin controls for prompts/personas, broader Vitest coverage, richer Markdown/detail UI, paginated history, refreshed palette and responsive tweaks. Remaining optional ideas include search/export or more advanced admin tooling.
 
-### Delivery Summary & Final Steps
+### Delivery Summary
 
-- Infrastructure already matches the Phase 0 spec: Postgres + Redis containers live on the shared docker network and are wired through `.env`; Redis can remain unused unless we later chase session-performance tuning.
-- Next.js now hits every core requirement (passcode gate, anger/gratitude/creative flows, Ollama-backed prompts, PWA manifest), leaving Phase 4 polish items to wrap before launch.
-- Entry detail bug above is the primary outstanding defect and aligns with the Known Issues list.
+- **Auth & Sessions**: Passcode gate with argon2 hashing and JWT cookies; automated tests cover set/verify/status flows.
+- **Entries & History**: Anger, gratitude, and creative flows now share a cohesive UI with keyboard shortcuts, status banners, and paginated history. `/entries` provides a server-rendered archive accessible via the home page.
+- **Prompts & Personas**: Gratitude randomizer and creative persona/prompt generation use Prisma-backed APIs with Vitest suites. New admin endpoints + settings UI let operators toggle active prompts/personas without touching the database.
+- **UI Polish**: Palette consolidated with consistent spacing, typography, and contrast across home, detail, archive, and settings/admin screens. Markdown renderer upgraded for readability.
+- **Testing**: Vitest suites cover auth, entries API (list/create), prompt endpoints, admin toggles, plus UI components (PasscodeGate, HistoryPreview).
 
-**Final tasks for this delivery:**
-1. Fix `/api/entries/[id]` so it destructures `{ params }` synchronously, then add a test to prove the right entry is returned to the detail page.
-2. Replace the handcrafted Markdown renderer in `src/app/entries/[id]/page.tsx` with a richer renderer (lists, links, blockquotes, code blocks) to finish the Phase 4 “richer Markdown renderer” milestone.
-3. Expand the “History snapshot” into a paginated history view so users can browse all past entries, meeting the “Past entries list with pagination” requirement.
-4. After the UX work lands, layer in automated coverage for auth setup, entry creation, and prompt generation to reduce regression risk before declaring Phase 4 complete.
+### Next Considerations (Optional)
+1. Search/export tooling or multi-user support if scope expands.
+2. Additional PWA enhancements (offline caching, install prompts) if mobile usage grows.
+3. Extended analytics or anger/gratitude insights for future iterations.

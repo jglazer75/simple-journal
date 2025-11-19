@@ -86,6 +86,14 @@ type HistoryPreviewProps = {
   refreshKey: number;
 };
 
+type HistoryMeta = {
+  page: number;
+  pageSize: number;
+  total: number;
+};
+
+const HISTORY_PAGE_SIZE = 10;
+
 function useShortcut(letter: string, handler: () => void) {
   useEffect(() => {
     const listener = (event: KeyboardEvent) => {
@@ -238,7 +246,7 @@ export default function Home() {
   }
 
   return (
-    <div className="min-h-screen bg-[var(--background)] px-4 py-12 text-[var(--foreground)]">
+    <div className="min-h-screen bg-[var(--background)] bg-[radial-gradient(circle_at_top,_rgba(255,255,255,0.85),_transparent_55%)] px-4 py-12 text-[var(--foreground)]">
       <main className="mx-auto flex w-full max-w-4xl flex-col gap-10 rounded-[40px] border border-[var(--border-soft)] bg-[var(--surface)]/95 px-6 py-10 shadow-[var(--shadow-soft)] sm:px-10">
         <header className="space-y-3">
           <p className="text-xs font-semibold uppercase tracking-[0.4em] text-[var(--muted)]">
@@ -261,7 +269,7 @@ export default function Home() {
           </div>
         </header>
 
-        <nav className="flex flex-wrap gap-3 rounded-3xl border border-[var(--border-soft)] bg-[#fdfcf8] p-2">
+        <nav className="flex flex-wrap gap-3 rounded-3xl border border-[var(--border-soft)] bg-[var(--panel)]/80 p-2">
           {TABS.map((tab) => (
             <button
               key={tab.id}
@@ -269,8 +277,8 @@ export default function Home() {
               onClick={() => setActiveTab(tab.id)}
               className={`flex min-w-[150px] flex-1 flex-col rounded-2xl border px-4 py-3 text-left transition ${
                 activeTab === tab.id
-                  ? "border-[#445272] bg-[#4b5a7a] text-white shadow-lg shadow-[#4b5a7a]/25"
-                  : "border-transparent text-[#494239] hover:border-[#5c5345]/20 hover:bg-white hover:text-[#2a2520]"
+                  ? "border-indigo-200 bg-indigo-600 text-white shadow-lg shadow-indigo-600/25"
+                  : "border-transparent text-slate-600 hover:border-slate-200 hover:bg-white hover:text-slate-900"
               }`}
             >
               <span className="text-base font-semibold">{tab.label}</span>
@@ -360,7 +368,7 @@ function AngerEntry({ onEntrySaved }: EntryFormProps) {
         <p className="text-xs font-semibold uppercase tracking-[0.3em] text-[var(--muted)]">
           Guided prompt
         </p>
-        <p className="text-2xl font-medium leading-snug text-[#32271f]">
+        <p className="text-2xl font-medium leading-snug text-slate-900">
           “I am angry because I care about…”
         </p>
       </div>
@@ -394,7 +402,7 @@ function AngerEntry({ onEntrySaved }: EntryFormProps) {
         <button
           type="submit"
           disabled={saving}
-          className="rounded-full bg-[#b35442] px-6 py-2 text-sm font-semibold text-white shadow-lg shadow-[#b35442]/40 transition hover:translate-x-0.5 hover:-translate-y-0.5 hover:shadow-[0_20px_40px_rgba(179,84,66,0.35)] disabled:cursor-not-allowed disabled:opacity-60"
+          className="rounded-full bg-rose-500 px-6 py-2 text-sm font-semibold text-white shadow-lg shadow-rose-500/40 transition hover:translate-x-0.5 hover:-translate-y-0.5 hover:shadow-[0_20px_40px_rgba(179,84,66,0.35)] disabled:cursor-not-allowed disabled:opacity-60"
         >
           {saving ? "Saving…" : "Save anger entry"}
         </button>
@@ -535,7 +543,7 @@ function GratitudeEntry({ onEntrySaved }: EntryFormProps) {
         <button
           type="submit"
           disabled={saving}
-          className="rounded-full bg-[#3a604f] px-6 py-2 text-sm font-semibold text-white shadow-lg shadow-[#3a604f]/40 transition hover:-translate-y-0.5 hover:shadow-[0_20px_40px_rgba(58,96,79,0.45)] disabled:cursor-not-allowed disabled:opacity-60"
+          className="rounded-full bg-emerald-600 px-6 py-2 text-sm font-semibold text-white shadow-lg shadow-emerald-600/40 transition hover:-translate-y-0.5 hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-60"
         >
           {saving ? "Saving…" : "Save gratitude entry"}
         </button>
@@ -748,7 +756,7 @@ function CreativeEntry({ onEntrySaved }: EntryFormProps) {
                   onClick={() => togglePersona(persona.id)}
                   className={`rounded-2xl border px-4 py-3 text-left transition ${
                     isActive
-                      ? "border-[#1d1a14] bg-[#1d1a14] text-white shadow-lg shadow-[#1d1a14]/30"
+                      ? "border-slate-900 bg-slate-900 text-white shadow-lg shadow-slate-900/30"
                       : "border-black/10 bg-white text-slate-800 hover:border-black/30"
                   }`}
                 >
@@ -775,16 +783,16 @@ function CreativeEntry({ onEntrySaved }: EntryFormProps) {
         ) : null}
       </div>
 
-      <div className="space-y-3 rounded-2xl border border-dashed border-[#c5d4f4] bg-[#eef2fe] p-4">
+      <div className="space-y-3 rounded-2xl border border-dashed border-indigo-200 bg-indigo-50 p-4">
         <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
           <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.3em] text-[#5360a7]">
+            <p className="text-xs font-semibold uppercase tracking-[0.3em] text-indigo-700">
               AI prompt
             </p>
-            <p className="text-sm text-[#3b446d]">
+            <p className="text-sm text-indigo-700">
               Internal Ollama (mistral / gpt-oss) blends the selected personas into one idea.
             </p>
-            <p className="mt-1 inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.2em] text-[#3b446d]">
+            <p className="mt-1 inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.2em] text-indigo-700">
               <span
                 className={`inline-flex h-2.5 w-2.5 rounded-full ${
                   ollamaStatus === "online"
@@ -810,16 +818,16 @@ function CreativeEntry({ onEntrySaved }: EntryFormProps) {
             disabled={promptLoading || personas.length === 0}
             className={`self-start rounded-full px-4 py-2 text-sm font-semibold text-white shadow-lg transition hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-60 ${
               ollamaStatus === "online"
-                ? "bg-[#127150] shadow-[#127150]/40 hover:shadow-[0_20px_40px_rgba(18,113,80,0.45)]"
+                ? "bg-emerald-600 shadow-emerald-600/40 hover:bg-emerald-700"
                 : ollamaStatus === "offline"
-                  ? "bg-[#c0392b] shadow-[#c0392b]/40 hover:shadow-[0_20px_40px_rgba(192,57,43,0.45)]"
-                  : "bg-[#384a8c] shadow-[#384a8c]/40 hover:shadow-[0_20px_40px_rgba(56,74,140,0.45)]"
+                  ? "bg-rose-500 shadow-rose-500/40 hover:bg-rose-600"
+                  : "bg-indigo-600 shadow-indigo-600/40 hover:bg-indigo-700"
             }`}
           >
             {promptLoading ? "Generating…" : "Generate prompt"}
           </button>
         </div>
-        <div className="rounded-2xl border border-[#d9e3ff] bg-white px-4 py-3 text-sm text-[#273048]">
+        <div className="rounded-2xl border border-indigo-100 bg-white px-4 py-3 text-sm text-indigo-800">
           <p className="whitespace-pre-line">
             {promptState?.text ??
               "Tap “Generate prompt” to ask the internal Ollama instance for a tailored idea."}
@@ -859,7 +867,7 @@ function CreativeEntry({ onEntrySaved }: EntryFormProps) {
         <button
           type="submit"
           disabled={saving}
-          className="rounded-full bg-[#364685] px-6 py-2 text-sm font-semibold text-white shadow-lg shadow-[#364685]/40 transition hover:-translate-y-0.5 hover:shadow-[0_20px_40px_rgba(54,70,133,0.45)] disabled:cursor-not-allowed disabled:opacity-60"
+          className="rounded-full bg-indigo-700 px-6 py-2 text-sm font-semibold text-white shadow-lg shadow-indigo-700/40 transition hover:-translate-y-0.5 hover:bg-indigo-800 disabled:cursor-not-allowed disabled:opacity-60"
         >
           {saving ? "Saving…" : "Save creative entry"}
         </button>
@@ -867,50 +875,83 @@ function CreativeEntry({ onEntrySaved }: EntryFormProps) {
     </form>
   );
 }
-function HistoryPreview({ refreshKey }: HistoryPreviewProps) {
+export function HistoryPreview({ refreshKey }: HistoryPreviewProps) {
   const [entries, setEntries] = useState<JournalEntryDto[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [meta, setMeta] = useState<HistoryMeta | null>(null);
 
-  const fetchHistory = useCallback(async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const response = await fetch("/api/entries?page=1&pageSize=5", {
-        method: "GET",
-        cache: "no-store",
-      });
-      if (response.status === 401) {
-        setEntries([]);
-        setError("Unlock your journal to view history.");
-        return;
+  const fetchHistory = useCallback(
+    async (pageToLoad: number) => {
+      setLoading(true);
+      setError(null);
+      try {
+        const response = await fetch(
+          `/api/entries?page=${pageToLoad}&pageSize=${HISTORY_PAGE_SIZE}`,
+          {
+            method: "GET",
+            cache: "no-store",
+          },
+        );
+        if (response.status === 401) {
+          setEntries([]);
+          setMeta(null);
+          setError("Unlock your journal to view history.");
+          return;
+        }
+        if (!response.ok) {
+          throw new Error("Unable to load entries.");
+        }
+        const data = (await response.json()) as {
+          entries: JournalEntryDto[];
+          meta?: HistoryMeta;
+        };
+        setEntries(data.entries ?? []);
+        setMeta(
+          data.meta ?? {
+            page: pageToLoad,
+            pageSize: HISTORY_PAGE_SIZE,
+            total: data.entries?.length ?? 0,
+          },
+        );
+      } catch (error) {
+        setError(
+          error instanceof Error
+            ? error.message
+            : "Unexpected error while loading history.",
+        );
+      } finally {
+        setLoading(false);
       }
-      if (!response.ok) {
-        throw new Error("Unable to load entries.");
-      }
-      const data = (await response.json()) as {
-        entries: JournalEntryDto[];
-      };
-      setEntries(data.entries ?? []);
-    } catch (error) {
-      setError(
-        error instanceof Error
-          ? error.message
-          : "Unexpected error while loading history.",
-      );
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+    },
+    [],
+  );
 
   useEffect(() => {
-    void fetchHistory();
-  }, [fetchHistory, refreshKey]);
+    setCurrentPage(1);
+  }, [refreshKey]);
+
+  useEffect(() => {
+    void fetchHistory(currentPage);
+  }, [fetchHistory, currentPage, refreshKey]);
+
+  const totalEntries = meta?.total ?? entries.length;
+  const totalPages =
+    meta && meta.pageSize > 0 ? Math.max(1, Math.ceil(meta.total / meta.pageSize)) : 1;
+  const pageStart =
+    totalEntries === 0 ? 0 : (meta ? (meta.page - 1) * meta.pageSize + 1 : 1);
+  const pageEnd =
+    totalEntries === 0
+      ? 0
+      : meta
+        ? Math.min(meta.page * meta.pageSize, meta.total)
+        : entries.length;
 
   let content: React.ReactNode;
   if (loading) {
     content = (
-      <p className="text-sm text-[var(--muted)]">Loading recent entries…</p>
+      <p className="text-sm text-[var(--muted)]">Loading your journal history…</p>
     );
   } else if (error) {
     content = (
@@ -932,7 +973,7 @@ function HistoryPreview({ refreshKey }: HistoryPreviewProps) {
           const trimmed = entry.bodyMarkdown?.trim() ?? "";
           let snippet: string;
           if (trimmed.length > 0) {
-            snippet = trimmed.length > 120 ? `${trimmed.slice(0, 120)}…` : trimmed;
+            snippet = trimmed.length > 160 ? `${trimmed.slice(0, 160)}…` : trimmed;
           } else if (entry.entryType === "ANGER" && entry.angerReason) {
             snippet = entry.angerReason;
           } else if (
@@ -952,17 +993,17 @@ function HistoryPreview({ refreshKey }: HistoryPreviewProps) {
             <li key={entry.id}>
               <Link
                 href={`/entries/${entry.id}`}
-                className="group flex flex-col gap-2 rounded-2xl border border-[#d6d0c7] bg-white px-4 py-3 text-sm text-[#2b2520] transition hover:-translate-y-0.5 hover:border-[#c1b8ab] md:flex-row md:items-center md:justify-between"
+                className="group flex flex-col gap-2 rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-700 transition hover:-translate-y-0.5 hover:border-slate-300 md:flex-row md:items-center md:justify-between"
               >
-                <div className="text-base font-semibold text-[#201b16]">
+                <div className="text-base font-semibold text-slate-900">
                   {emoji} {entry.title}
                 </div>
-                <p className="text-sm text-[#4b443a] md:flex-1 md:px-4">{snippet}</p>
-                <div className="flex items-center gap-3 text-xs font-semibold text-[#4b5a7a]">
-                  <span className="uppercase tracking-wide text-[#6d6456]">
+                <p className="text-sm text-slate-600 md:flex-1 md:px-4">{snippet}</p>
+                <div className="flex items-center gap-3 text-xs font-semibold text-indigo-600">
+                  <span className="uppercase tracking-wide text-slate-500">
                     {formatEntryTimestamp(entry.createdAt)}
                   </span>
-                  <span className="text-[#4b5a7a] group-hover:text-[#2f3a58]">Open →</span>
+                  <span className="text-indigo-600 group-hover:text-indigo-800">Open →</span>
                 </div>
               </Link>
             </li>
@@ -972,30 +1013,71 @@ function HistoryPreview({ refreshKey }: HistoryPreviewProps) {
     );
   }
 
+  const canGoPrev = currentPage > 1 && !loading;
+  const canGoNext = currentPage < totalPages && !loading;
+
   return (
     <section className="rounded-3xl border border-black/5 bg-white/95 p-6 shadow-[0_30px_60px_rgba(23,18,12,0.05)] md:p-8">
       <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
         <div>
           <p className="text-xs font-semibold uppercase tracking-[0.3em] text-[var(--muted)]">
-            Recent entries
+            Journal history
           </p>
-          <h2 className="text-2xl font-semibold text-[var(--foreground)]">History snapshot</h2>
+          <h2 className="text-2xl font-semibold text-[var(--foreground)]">
+            Your full archive
+          </h2>
           <p className="text-sm text-[var(--muted)]">
-            The five most recent thoughts across anger, gratitude, and creative.
+            Browse every entry with simple pagination.
           </p>
         </div>
-        <button
-          type="button"
-          onClick={() => {
-            void fetchHistory();
-          }}
-          className="rounded-full border border-black/10 px-4 py-2 text-sm font-semibold text-[var(--foreground)] transition hover:-translate-y-0.5 hover:bg-white"
-        >
-          Refresh
-        </button>
+        <div className="flex flex-wrap items-center gap-2 text-xs font-semibold text-[var(--muted)]">
+          <button
+            type="button"
+            onClick={() => {
+              setCurrentPage((page) => Math.max(1, page - 1));
+            }}
+            disabled={!canGoPrev}
+            className="rounded-full border border-indigo-500 px-3 py-1.5 text-xs font-semibold text-indigo-900 transition hover:-translate-y-0.5 hover:bg-indigo-50 disabled:cursor-not-allowed disabled:border-slate-300 disabled:text-slate-400"
+          >
+            ← Previous
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              setCurrentPage((page) => page + 1);
+            }}
+            disabled={!canGoNext}
+            className="rounded-full border border-indigo-500 px-3 py-1.5 text-xs font-semibold text-indigo-900 transition hover:-translate-y-0.5 hover:bg-indigo-50 disabled:cursor-not-allowed disabled:border-slate-300 disabled:text-slate-400"
+          >
+            Next →
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              void fetchHistory(currentPage);
+            }}
+            disabled={loading}
+            className="rounded-full border border-indigo-500 px-3 py-1.5 text-xs font-semibold text-indigo-900 transition hover:-translate-y-0.5 hover:bg-indigo-50 disabled:cursor-not-allowed disabled:border-slate-300 disabled:text-slate-400"
+          >
+            Refresh
+          </button>
+          <Link
+            href="/entries"
+            className="rounded-full border border-indigo-500 px-3 py-1.5 text-xs font-semibold text-indigo-900 transition hover:-translate-y-0.5 hover:bg-indigo-50"
+          >
+            Full archive →
+          </Link>
+        </div>
       </div>
 
-      <div className="mt-6">{content}</div>
+      <div className="mt-6 space-y-4">
+        <div className="text-xs uppercase tracking-[0.3em] text-[var(--muted)]">
+          {totalEntries > 0
+            ? `Showing ${pageStart}–${pageEnd} of ${totalEntries} entries · Page ${currentPage} of ${totalPages}`
+            : "No entries saved yet"}
+        </div>
+        {content}
+      </div>
     </section>
   );
 }
@@ -1005,13 +1087,15 @@ type PasscodeGateProps = {
   onAuthenticated: () => void;
   statusError?: string | null;
   refetchStatus: () => Promise<void>;
+  fetchImpl?: typeof fetch;
 };
 
-function PasscodeGate({
+export function PasscodeGate({
   hasPasscode,
   onAuthenticated,
   statusError,
   refetchStatus,
+  fetchImpl,
 }: PasscodeGateProps) {
   const [passcode, setPasscode] = useState("");
   const [confirmPasscode, setConfirmPasscode] = useState("");
@@ -1042,7 +1126,8 @@ function PasscodeGate({
     try {
       setSubmitting(true);
       const endpoint = mode === "set" ? "/api/auth/set" : "/api/auth/verify";
-      const response = await fetch(endpoint, {
+      const clientFetch = fetchImpl ?? fetch;
+      const response = await clientFetch(endpoint, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ passcode }),
@@ -1146,7 +1231,7 @@ function PasscodeGate({
         <button
           type="submit"
           disabled={submitting}
-          className="w-full rounded-full bg-[var(--foreground)] px-4 py-3 text-base font-semibold text-white shadow-lg shadow-[var(--foreground)]/30 transition disabled:cursor-not-allowed disabled:opacity-50"
+          className="w-full rounded-full bg-indigo-700 px-4 py-3 text-base font-semibold text-white shadow-lg shadow-indigo-900/30 transition hover:bg-indigo-800 disabled:cursor-not-allowed disabled:opacity-50"
         >
           {submitting
             ? "Working..."

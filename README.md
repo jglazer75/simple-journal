@@ -1,6 +1,6 @@
 # Simple Journal
 
-Tailnet-only anger, gratitude, and creative journaling built with Next.js, PostgreSQL, Redis, and an internal Ollama instance. Entries stay private on PROX-DOCK, locked behind a local passcode, and are accessible only from your tailnet.
+Tailnet-only anger, gratitude, and creative journaling built with Next.js, PostgreSQL, Redis, and an internal Ollama instance. Entries stay private on host machine, locked behind a local passcode, and are accessible only from your tailnet.
 
 ## Highlights
 
@@ -10,7 +10,7 @@ Tailnet-only anger, gratitude, and creative journaling built with Next.js, Postg
   - ✍️ **Creative**: persona-driven prompts generated through Ollama with Markdown drafting.
 - Auto-titled entries per type (`🤬 001`, `🥰 042`, etc.), chronological history, and detailed entry view with Markdown rendering.
 - Passcode gate backed by argon2 + long-lived JWT cookie; single-user by design but future-proofed via UUIDs.
-- Docker-first deployment targeting PROX-DOCK with Next.js running behind the existing Nginx proxy.
+- Docker-first deployment targeting host machine with Next.js running behind the existing Nginx proxy.
 
 ## Architecture at a Glance
 
@@ -20,13 +20,13 @@ Tailnet-only anger, gratitude, and creative journaling built with Next.js, Postg
 | `journal-db` | PostgreSQL 16 storing users, entries, prompts, personas, counters. |
 | `journal-redis` | Redis 7 for future session caching and prompt health flags. |
 | `ollama` | Tailnet-accessible Ollama instance (e.g., `http://ollama.tailnet.local:11434`). |
-| `nginx-proxy` | Existing PROX-DOCK ingress mapping `journal.tailnet.local` → journal-web. |
+| `nginx-proxy` | Existing host machine ingress mapping `journal.tailnet.local` → journal-web. |
 
 All containers share the `ogsdell-network` / `prox-dock-internal` Docker network; Postgres/Redis/Ollama never expose public ports.
 
 ## Prerequisites
 
-- Docker 26+ and Docker Compose v2 on PROX-DOCK.
+- Docker 26+ and Docker Compose v2 on host machine.
 - Tailnet DNS entry (e.g., `journal.tailnet.local`) pointing at the host running Nginx.
 - Node.js 22+ (only required for local development outside Docker).
 - An Ollama instance reachable from the Docker network with at least one local model (`mistral:latest`, `gpt-oss:20b`, etc.).
@@ -45,7 +45,7 @@ Place these in `.env` so both Docker and local scripts inherit them:
 | `JWT_SECRET` | Long random string for signing session cookies. | `p5Pj...` |
 | `SESSION_COOKIE_SECURE` (optional) | Override cookie security flag (`true`/`false`). | `true` |
 
-## Quick Start (Docker on PROX-DOCK)
+## Quick Start (Docker on host machine)
 
 1. Copy `.env.example` (if provided) or craft `.env` with the variables above. Ensure the Postgres and Redis hosts match whatever backing services you already run on `ogsdell-network`.
 2. Install dependencies once: `cd journal-web && npm install`. (This can also be done inside the container via `docker compose run --rm journal-web npm install`.)
@@ -62,7 +62,7 @@ Place these in `.env` so both Docker and local scripts inherit them:
    docker compose build journal-web
    docker compose up -d journal-web
    ```
-5. Update Nginx (if needed) so `journal.tailnet.local` proxies to `journal-web:3001`. The existing PROX-DOCK snippet is:
+5. Update Nginx (if needed) so `journal.tailnet.local` proxies to `journal-web:3001`. The existing host machine snippet is:
    ```
    server {
        server_name journal.tailnet.local;

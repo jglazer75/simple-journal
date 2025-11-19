@@ -1,16 +1,16 @@
 @import "tailwindcss";
 
 :root {
-  --background: #f8f4ee;
-  --surface: #fffdfa;
-  --panel: #ffffff;
-  --muted: #7b756a;
-  --foreground: #1d1a14;
-  --accent: #8fb8a4;
-  --accent-strong: #d18b79;
-  --accent-deep: #7184c9;
-  --border-soft: rgba(29, 26, 20, 0.08);
-  --shadow-soft: 0 35px 80px rgba(29, 26, 20, 0.08);
+  --background: #e8e0d1;
+  --surface: #ffffff;
+  --panel: #f8f3ea;
+  --muted: #5e584f;
+  --foreground: #1d1914;
+  --accent: #4a56c8;
+  --accent-strong: #2f3da0;
+  --accent-soft: #e4e7ff;
+  --border-soft: rgba(29, 25, 20, 0.12);
+  --shadow-soft: 0 35px 70px rgba(20, 16, 12, 0.12);
 }
 
 @theme inline {
@@ -22,22 +22,23 @@
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #0f1110;
-    --surface: #1a1c1a;
-    --panel: #202221;
-    --muted: #b1b1aa;
-    --foreground: #f2f2ef;
-    --accent: #84c7b9;
-    --accent-strong: #f09482;
-    --accent-deep: #91a7ff;
-    --border-soft: rgba(255, 255, 255, 0.08);
-    --shadow-soft: 0 35px 80px rgba(0, 0, 0, 0.55);
+    --background: #0e1016;
+    --surface: #161921;
+    --panel: #1f232e;
+    --muted: #b5bac9;
+    --foreground: #f4f6ff;
+    --accent: #8da2ff;
+    --accent-strong: #c3cdff;
+    --accent-soft: rgba(141, 162, 255, 0.18);
+    --border-soft: rgba(255, 255, 255, 0.1);
+    --shadow-soft: 0 35px 80px rgba(0, 0, 0, 0.45);
   }
 }
 
 body {
   min-height: 100vh;
-  background: radial-gradient(circle at top, #ffffff 0%, transparent 40%) fixed,
+  background: radial-gradient(circle at top, rgba(255, 255, 255, 0.85) 0%, transparent 50%)
+      fixed,
     var(--background);
   color: var(--foreground);
   font-family: var(--font-geist-sans), -apple-system, BlinkMacSystemFont,
